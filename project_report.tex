@@ -1,15 +1,97 @@
-%! Author = mavi
-%! Date = 2026-03-24
-
-% Preamble
-\documentclass[11pt]{article}
-
-% Packages
+\documentclass[fontsize=11pt]{article}
 \usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{xcolor}
+\usepackage{indentfirst}
 
-% Document
+\title{CSC111 Project Proposal: \textbf{MovieMatch: Discovering Similar Films Through Networks and BSTs}}
+\author{Mavi Ramos Sanchez, Syaikha Faiza Arifin, Capucine Crouzet, Tamima Wadageri}
+\date{\today}
+
 \begin{document}
+\maketitle
+
+\section*{Problem Description and Research Question}
+
+Movie streaming catalogs are huge, and users often struggle to quickly find films they will enjoy. Many platforms address this issue using recommendation systems, tools that help users discover similar and relevant content. These systems attempt to predict what users will enjoy using limited data about what they have already watched. However, they can feel like a “black box,” and people seldom know why something is recommended. \\
+
+Recommendations usually rely on user demographics, viewing history, and genre labels, and may also be influenced by platform interests. From our own experience, a major user issue is that platforms combine several recommendation strategies and rarely provide features that suggest movies based on a single film. Sometimes we simply want to watch something very similar to one movie without our history or demographics influencing the results. In some cases, recommendation systems go too far and basically typecast users, presenting only one type of media, which can lead to exhaustion and over-saturation. Furthermore, a single platform typically recommends only movies that are available within its own catalog. \\
+
+Our project seeks to address this limitation by using content-based filtering focused on a single movie. This approach recommends items with similar attributes rather than relying on what other users watched. Platforms tend to merge strategies for their systems, but what we seek to do is most similar to content-based filtering. The idea behind our project is most effective in its specificity: the user’s intention should be "forget my watch history, my demographics, and just recommend something similar based on one movie I liked." \\
+
+To do this, we will use the dataset that includes self-reported tags by other users, which makes the recommendations more based on the user's experience of watching the movies rather than relying solely on official genre labels. For example, user tags can capture qualities such as "mind-bending," "feel-good," or "dark comedy" that genre labels like "Sci-Fi" or "Comedy" cannot fully describe. These data make it possible to model connections between movies through shared user watch experience.  \\
+
+Our project aims to create a recommendation tool that allows users to receive suggestions based on a single movie. The system will not only identify similar films but also prioritize the highest-rated ones, addressing both relevance and quality.\\
+
+This raises the following question: \textbf{How can we recommend similar movies (sorted by rating) to people based on a single movie they liked, using a graph of tag and genre similarities combined with a binary search tree for sorting?} \\
+
+\section*{Computational Plan}
+
+Our system will use the following computations. First, we process the CSV files and the data by splitting the user tags so that each movie stores its tags in a set. We also compute the average rating from all user ratings. Next, we build the similarity graph where each movie is a node. Two movies get connected by an edge if they are sufficiently similar based on their genres and tags. \\
+
+To measure similarity, we will count the number of  genres that two movies have in common, and divide this result by the total number of unique genres that they share (intersection). For example, if Movie A has {Action, Sci-Fi, Thriller} and Movie B has {Action, Sci-Fi}, they share 2 genres out of 3 total unique ones, so the genre similarity is 2/3 = 0.67. We then do the same for the user tags. The two scores are then combined using a weighted average (60\% genres, 40\% tags) to obtain an overall similarity score. If this score is greater than 0.3 (this threshold might be modified but is a rough estimate of what is expected), we create an edge between the two movies in the graph. \\
+
+When a user picks a movie, we examine all of  its neighbors by traversing the graph and limit candidates to the top 50 most similar ones that have at least 10 ratings. After identifying these similar movies using the graph, we then need to present the best ones first. To do so, we insert each candidate movie into a binary search tree, using its rating as the key and the number of ratings as a tie-breaker when ratings are identical. \\
+To obtain movies sorted from highest to lowest rating, we take advantage of the BST property and perform reverse traversal, visiting the right subtree first, then the root, and finally the left subtree, in order to extract the movie object nodes of the BST in descending order. This gives us all the movies in descending rating order. Finally, we return the top 5 highest rated similar movies as recommendations. \\
+
+We will use the MovieLens "latest-small" dataset which can be accessed here https://grouplens.org/datasets/movielens/, and is also referenced below. This dataset contains 100,836 ratings and 3,683 tag applications across 9,742 movies from 610 users, generated in September 2018. The data is organized into four CSV files named here along with sample data for each:
+\begin{itemize}
+    \item \textbf{movies.csv} (9,742 rows)
+    Sample data: (movieId = 1, title = ``Toy Story (1995)'', \\
+    genres = ``Adventure|Animation|Children|Comedy|Fantasy'')
+
+    \item \textbf{tags.csv} (3,683 rows)
+    Sample data: (userId = 15, movieId = 339, tag = ``sandra bullock'', \\
+    timestamp = 1138047411)
+
+    \item \textbf{ratings.csv} (100,836 rows)
+    Sample data: (userId = 1, movieId = 31, rating = 2.5, timestamp = 1260759144)
+
+    \item \textbf{links.csv} (9,742 rows)
+    Sample data: (movieId = 1, imdbId = 0114709, tmdbId = 862) \\
+\end{itemize}
+
+For visualization,we will create a desktop application using Tkinter for the interface and Plotly to display the network graph. Our previous experience with Tkinter will allow us to design windows with input fields where users can enter a movie title and a minimum rating filter. When the user clicks the recommendation search button, the system displays the top 5 recommendations in a Tkinter table showing information about each movie, including its title and rating matching genres and tags and similarity percentage. \\
+We also plan to embed the Plotly visualization within the Tkinter interface to display the network graph and highlight the position of the similar movie in the graph. Edge thickness will represent the similarity proportion calculated between vertices (indicating the strength of similarity), while node size will represent the movie rating to improve readability. \\
+
+We have decided to use Plotly (if we have time) to create interactive visualizations such as network graphs and tables, which we will embed within windows of a desktop GUI built using the Tkinter library in python. We will use Plotly tools such as plotly.graph\_objects.Scatter() to create the visualization of network nodes and edges, as previously described, with edge thickness representing similarity. \\
+In addition, plotly.graph\_objects.FigureWidget() will allow us to embed integrative graphs in the Tkinter interface. For the Tkinter interface itself, we will use tk.Entry() for the search box (where the user can input the movie title), and tk.Scale() for sliders (which we have mentioned above). To display the recommendation table, we will use tk.Listbox() or ttk.Treeview() (most likely the latter since we aim to present the results in a tabular format to transparently show the features influencing the recommendations as previously described).
 
 
+\section*{References}
+
+\color{blue}
+\indent References from topic research: \\
+
+\color{black}
+“How Netflix's Recommendations System Works.” Netflix Help Center, https://help.netflix.com/en/node/100639. Accessed 5 Mar. 2026. \\
+
+Hutson, Matthew. "How Recommendation Algorithms Work—and Why They May Miss the Mark." Scientific American, https://www.scientificamerican.com/article/how-recommendation-algorithms-work-and-why-they-may-miss-the-mark/. Accessed 5 Mar. 2026. (This link does not seem to work by clicking on it; therefore, copy and paste it in a new tab).\\
+
+“What Are Recommender Systems?” GeeksforGeeks, https://www.geeksforgeeks.org/machine-learning/what-are-recommender-systems/. Accessed 5 Mar. 2026. (This link does not seem to work by clicking on it; therefore, copy and paste it in a new tab).\\
+
+\color{blue}
+Dataset Reference: \\
+
+\color{black}
+Harper, F. Maxwell, and Joseph A. Konstan. "The MovieLens Datasets: History and Context." ACM Transactions on Interactive Intelligent Systems, vol. 5, no. 4, 2015, pp. 19:1–19:19, https://doi.org/10.1145/2827872. \\
+
+\color{blue}
+References for documentation and tutorials regarding Python libraries: \\
+
+\color{black}
+“Graph Objects in Python.” Plotly, https://plotly.com/python/graph-objects/. Accessed 6 Mar. 2026. \\
+
+“Network Graphs in Python.” Plotly, https://plotly.com/python/network-graphs/. Accessed 6 Mar. 2026. \\
+
+“Python Plotly Tutorial.” GeeksforGeeks, https://www.geeksforgeeks.org/python/python-plotly-tutorial/. \\ Accessed 6 Mar. 2026. \\
+
+“Python Tkinter Tutorial.” GeeksforGeeks, https://www.geeksforgeeks.org/python/python-tkinter-tutorial/. \\ Accessed 6 Mar. 2026. \\
+
+% NOTE: LaTeX does have a built-in way of generating references automatically,
+% but it's a bit tricky to use so you are allowed to write your references
+% manually using a standard academic format like MLA or IEEE.
+% See project proposal handout for details.
 
 \end{document}
