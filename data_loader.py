@@ -1,0 +1,183 @@
+"""Project 2: MovieMatch: data_loader.py
+
+This module is responsible for loading and cleaning the MovieLens dataset
+from four CSV files and returning a mapping of movie IDs to Movie objects.
+
+"""
+
+from __future__ import annotations
+import csv
+
+
+class Movie:
+    """Represents a movie from the dataset and the data associated with it.
+
+    Instance Attributes:
+        - movie_id: unique movie's integer ID
+        - title: the full title including the year (for instance, "Toy Story (1995)")
+        - genres: set of genre strings for this movie.
+        - tags: set of cleaned user-reported tag strings, in lower-case, for this movie.
+        - avg_rating: mean of all user ratings for this movie, float (0.0 if there are no ratings for this movie)
+        - rating_count: number of ratings that exist for this movie
+        - imdb_id: IMDb indentifier string (for instance, "0114709"). May be empty.
+        - high_raters: set of user IDs who rated this movie >= 4.0
+
+    Representation Invariants:
+        - movie_id > 0
+        - 0.0 <= avg_rating <= 5.0
+        - rating_count >= 0
+
+        """
+
+    movie_id: int
+    title: str
+    genres: set[str]
+    tags: set[str]
+    avg_rating: float
+    rating_count: int
+    imdb_id: str
+    high_raters: set[int]
+
+    def __init__(self, movie_id: int, title: str) -> None:
+        self.movie_id = movie_id
+        self.title = title
+        self.genres = set()
+        self.tags = set()
+        self.avg_rating = 0.0
+        self.rating_count = 0
+        self.imdb_id = ""
+        self.high_raters = set()
+
+
+# Private Functions Below:
+
+def _load_movies() -> dict[int, Movie]:
+    """
+    Returns a mapping of movie_id to Movie object form movies.csv.
+
+    When there are no genres listed in the csv (appears as '(no genres listed)')
+    there will be an empty genres set. This means that its genre similarity is
+    0.0 with all other movies.
+
+    """
+    movies = {}
+    with open('data/movies.csv', 'r') as movie_file:
+        reader = csv.reader(movie_file)
+        next(reader)
+        for row in reader:
+            movie_id = int(row[0])
+            genres_raw = row[2]
+            title = row[1]
+
+            if genres_raw == '(no genres listed)':
+                genres = set()
+            else:
+                genres = set(genres_raw.split('|'))
+
+            movie = Movie(movie_id=movie_id, title=title)
+            movie.genres = genres
+            movies[movie_id] = movie
+
+    return movies
+
+
+def _load_ratings(movies: dict[int, Movie]) -> None:
+    """Mutate movies, adding avg_rating and rating_count from ratings.csv
+
+    Movies that have less than 10 ratings will have a rating_count for now, but
+    they will be filtered in load_data.
+    high_raters stores the set of user IDs who rated this movie >= 4.0
+
+    """
+    sum_ratings = {}
+    count_ratings = {}
+
+    with open('data/ratings.csv', 'r') as ratings_file:
+        reader = csv.reader(ratings_file)
+        next(reader)
+        for row in reader:
+            movie_id = int(row[1])
+            rating = float(row[2])
+            sum_ratings[movie_id] = sum_ratings.get(movie_id, 0.0) + rating
+            count_ratings[movie_id] = count_ratings.get(movie_id, 0) + 1
+            if rating >= 4.0:
+                user_id = int(row[0])
+                movies[movie_id].high_raters.add(user_id)
+
+    for movie_id, count in count_ratings.items():
+        movies[movie_id].rating_count = count
+        movies[movie_id].avg_rating = round(sum_ratings[movie_id] / count, 2)
+
+
+def _load_tags(movies: dict[int, Movie]) -> None:
+    """Mutate movies, adding movie's tags set from tags.csv.
+
+        Tags are converted to lowercase and surrounding whitespace is stripped.
+        """
+    with open('data/tags.csv', 'r') as tags_file:
+        reader = csv.reader(tags_file)
+        next(reader)
+        for row in reader:
+            movie_id = int(row[1])
+            cleaned_tags = row[2].strip().lower()
+            movies[movie_id].tags.add(cleaned_tags)
+
+
+def _load_links(movies: dict[int, Movie]) -> None:
+    """Mutate movies, adding the IMDb ID from links.csv.
+
+    The imdbId column stores the numeric portion only (e.g. "0114709").
+    The full URL is constructed in interface.py:
+            https://www.imdb.com/title/tt{imdb_id}/
+    """
+    with open('data/links.csv', 'r') as links_file:
+        reader = csv.reader(links_file)
+        next(reader)
+        for row in reader:
+            movie_id = int(row[0])
+            movies[movie_id].imdb_id = row[1]
+
+
+# Public Function
+
+def load_data(min_ratings: int = 10) -> dict[int, Movie]:
+    """Load, clean, and return all movie data as a mapping of movie_id to Movie object.
+
+    Movies with fewer than min_ratings ratings are excluded from the returned
+    dictionary because they don't have enough data for reliable recommendations.
+
+    Preconditions:
+         - min_ratings >= 0
+         - movies.csv, ratings.csv, tags.csv, links.csv are all present
+         in the data/ folder in the same directory as this file
+    """
+    movies = _load_movies()
+    _load_ratings(movies)
+    _load_tags(movies)
+    _load_links(movies)
+
+    rated_enough = {
+        movie_id: movie
+        for movie_id, movie in movies.items()
+        if movie.rating_count >= min_ratings
+    }
+
+    return rated_enough
+
+
+if __name__ == '__main__':
+    all_movies = load_data()
+    assert all(m.rating_count >= 10 for m in all_movies.values())
+    assert all(0.0 <= m.avg_rating <= 5.0 for m in all_movies.values())
+    print('All checks passed!')
+
+    import python_ta
+
+    python_ta.check_all(config={
+        'extra-imports': ['csv'],
+        'allowed-io': [
+            '_load_movies', '_load_ratings', '_load_tags', '_load_links'
+        ],
+        'max-line-length': 120,
+        'max-attributes': 8,
+    })
