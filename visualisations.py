@@ -8,7 +8,8 @@ info on hover only. The user can zoom and pan to explore.
 
 Implementation inspired by:
 - https://plotly.com/python/network-graphs/
-- https://github.com/Ashton-Sidhu/plotly-graph
+- https://users.cs.utah.edu/~yos/2021/02/02/plotly-python.html
+
 
 """
 from __future__ import annotations
