@@ -180,7 +180,7 @@ def _build_input_trace(input_movie: Movie) -> go.Scatter:
         x=[0.0], y=[0.0],
         mode='markers+text',
         text=[f'{input_movie.title}<br>★ {input_movie.avg_rating}'],
-        textposition='top center',
+        textposition='middle center',
         textfont={'color': '#A78BFA', 'size': 10},
         marker={'size': [(input_movie.avg_rating ** 2) * 6 + 20],
                 'color': '#12121f',
@@ -243,3 +243,4 @@ if __name__ == '__main__':
         'extra-imports': ['math', 'plotly.graph_objects', 'data_loader', 'graph'],
         'max-line-length': 120,
     })
+
