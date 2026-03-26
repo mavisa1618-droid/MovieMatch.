@@ -28,7 +28,7 @@ def _build_edge_traces(recommendations: list[tuple[Movie, float]]) -> list[go.Sc
             x=[0, x, None],
             y=[0, y, None],
             mode='lines',
-            line={'width': score * 10, 'color': '#C8960C'},
+            line={'width': score * 10, 'color': '#60A5FA'},
             hoverinfo='none',
             showlegend=False
         ))
@@ -44,10 +44,10 @@ def _build_node_trace(input_movie: Movie, recommendations: list[tuple[Movie, flo
     """
     node_x = [0.0]
     node_y = [0.0]
-    node_text = [f'<b>{input_movie.title}</b><br>({input_movie.title[-5:-1]})<br>★ {input_movie.avg_rating}']
+    node_text = [f'<b>{input_movie.title}</b><br>★ {input_movie.avg_rating}']
     node_size = [input_movie.avg_rating * 10 + 30]
-    node_color = ['#1a1a1a']
-    node_border_color = ['#FFD700']
+    node_color = ['#12121f']
+    node_border_color = ['#A78BFA']
     node_border_width = [3.0]
 
     for i, (movie, score) in enumerate(recommendations):
@@ -56,8 +56,8 @@ def _build_node_trace(input_movie: Movie, recommendations: list[tuple[Movie, flo
         node_y.append(math.sin(angle))
         node_text.append(f'{movie.title}<br>★ {movie.avg_rating} · {round(score * 100)}%')
         node_size.append(movie.avg_rating * 10 + 25)
-        node_color.append('#1a1a1a')
-        node_border_color.append('#8B0000')
+        node_color.append('#12121f')
+        node_border_color.append('#4F46E5')
         node_border_width.append(2.5)
 
     return go.Scatter(
@@ -83,21 +83,21 @@ def _build_legend_traces() -> list[go.Scatter]:
     legend_input = go.Scatter(
         x=[None], y=[None],
         mode='markers',
-        marker={'size': 10, 'color': '#1a1a1a', 'line': {'width': 2, 'color': '#FFD700'}},
+        marker={'size': 10, 'color': '#12121f', 'line': {'width': 2, 'color': '#A78BFA'}},
         name='Input movie',
         showlegend=True
     )
     legend_rec = go.Scatter(
         x=[None], y=[None],
         mode='markers',
-        marker={'size': 10, 'color': '#1a1a1a', 'line': {'width': 2, 'color': '#8B0000'}},
+        marker={'size': 10, 'color': '#12121f', 'line': {'width': 2, 'color': '#4F46E5'}},
         name='Recommendation',
         showlegend=True
     )
     legend_edge = go.Scatter(
         x=[None], y=[None],
         mode='lines',
-        line={'width': 3, 'color': '#C8960C'},
+        line={'width': 3, 'color': '#60A5FA'},
         name='Similarity (thicker = more similar)',
         showlegend=True
     )
@@ -125,13 +125,13 @@ def build_graph_figure(input_movie: Movie, recommendations: list[tuple[Movie, fl
 
     fig = go.Figure(data=edge_traces + [node_trace] + legend_traces)
     fig.update_layout(
-        paper_bgcolor='#141414',
-        plot_bgcolor='#141414',
+        paper_bgcolor='#0a0a12',
+        plot_bgcolor='#0a0a12',
         showlegend=True,
         legend={
-            'font': {'color': '#888888', 'size': 11},
-            'bgcolor': '#141414',
-            'bordercolor': '#333333',
+            'font': {'color': '#6b6b8a', 'size': 11},
+            'bgcolor': '#0a0a12',
+            'bordercolor': '#1e1e35',
             'borderwidth': 1,
             'orientation': 'h',
             'yanchor': 'bottom',
@@ -142,7 +142,7 @@ def build_graph_figure(input_movie: Movie, recommendations: list[tuple[Movie, fl
         xaxis={'showgrid': False, 'zeroline': False, 'showticklabels': False},
         yaxis={'showgrid': False, 'zeroline': False, 'showticklabels': False},
         margin={'l': 20, 'r': 20, 't': 20, 'b': 60},
-        hoverlabel={'bgcolor': '#1a1a1a', 'font_color': 'white', 'bordercolor': '#FFD700'}
+        hoverlabel={'bgcolor': '#12121f', 'font_color': 'white', 'bordercolor': '#A78BFA'}
     )
 
     return fig
