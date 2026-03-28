@@ -2,6 +2,8 @@
 
 Here MovieMatch runs.
 It loads the data and builds the graph and the interface.
+
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from data_loader import load_data
 from graph import build_from_movies

@@ -3,10 +3,11 @@
 This module is responsible for loading and cleaning the MovieLens dataset
 from four CSV files and returning a mapping of movie IDs to Movie objects.
 
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
-
 from __future__ import annotations
 import csv
+import os
 
 
 class Movie:
@@ -61,10 +62,12 @@ _WORDS_AFTER_COMMA = (
 def _index_where_first_paren(text: str, start: int) -> int:
     """Return the index of the first '(' at or after start, or -1 if there is none."""
     i = start
+
     while i < len(text):
         if text[i] == '(':
             return i
         i = i + 1
+
     return -1
 
 
@@ -72,9 +75,12 @@ def _fix_title_order(title_segment: str) -> str:
     """If title_segment is 'Name, Word' with Word in _WORDS_AFTER_COMMA, return 'Word Name'."""
     if ', ' not in title_segment:
         return title_segment
+
     before_comma, after_comma = title_segment.rsplit(', ', 1)
+
     if after_comma in _WORDS_AFTER_COMMA:
         return after_comma + ' ' + before_comma
+
     return title_segment
 
 
@@ -122,7 +128,11 @@ def _fix_paren_segments(title_before_year: str) -> str:
             fixed_parts.append(title_before_year[index:next_open_paren])
             index = next_open_paren
 
-    return ''.join(fixed_parts)
+    fixed_result = ''
+    for part in fixed_parts:
+        fixed_result += part
+
+    return fixed_result
 
 
 def _normalize_movie_title(title: str) -> str:
@@ -134,15 +144,26 @@ def _normalize_movie_title(title: str) -> str:
     title_before_year = title[:-7]
     title_before_year = _fix_paren_segments(title_before_year)
     open_paren_index = _index_where_first_paren(title_before_year, 0)
+
     if open_paren_index == -1:
         return _fix_title_order(title_before_year) + year_suffix
+
     main_title = title_before_year[:open_paren_index]
     end = len(main_title)
+
     while end > 0 and main_title[end - 1] == ' ':
         end = end - 1
+
     main_title = main_title[:end]
     suffix_in_parentheses = title_before_year[open_paren_index:]
+
     return _fix_title_order(main_title) + ' ' + suffix_in_parentheses + year_suffix
+
+
+def _csv_path(filename: str) -> str:
+    """Return the absolute path to a csv file stored in the same folder as this module."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(current_dir, filename)
 
 
 def _load_movies() -> dict[int, Movie]:
@@ -155,7 +176,8 @@ def _load_movies() -> dict[int, Movie]:
 
     """
     movies = {}
-    with open('movies.csv', 'r') as movie_file:
+
+    with open(_csv_path('movies.csv'), 'r', newline='', encoding='utf-8') as movie_file:
         reader = csv.reader(movie_file)
         next(reader)
         for row in reader:
@@ -186,7 +208,7 @@ def _load_ratings(movies: dict[int, Movie]) -> None:
     sum_ratings = {}
     count_ratings = {}
 
-    with open('ratings.csv', 'r') as ratings_file:
+    with open(_csv_path('ratings.csv'), 'r', newline='', encoding='utf-8') as ratings_file:
         reader = csv.reader(ratings_file)
         next(reader)
         for row in reader:
@@ -208,7 +230,7 @@ def _load_tags(movies: dict[int, Movie]) -> None:
 
         Tags are converted to lowercase and surrounding whitespace is stripped.
         """
-    with open('tags.csv', 'r') as tags_file:
+    with open(_csv_path('tags.csv'), 'r', newline='', encoding='utf-8') as tags_file:
         reader = csv.reader(tags_file)
         next(reader)
         for row in reader:
@@ -224,7 +246,7 @@ def _load_links(movies: dict[int, Movie]) -> None:
     The full URL is constructed in interface.py:
             https://www.imdb.com/title/tt{imdb_id}/
     """
-    with open('links.csv', 'r') as links_file:
+    with open(_csv_path('links.csv'), 'r', newline='', encoding='utf-8') as links_file:
         reader = csv.reader(links_file)
         next(reader)
         for row in reader:
@@ -262,11 +284,6 @@ def load_data(min_ratings: int = 10) -> dict[int, Movie]:
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-
-    # all_movies = load_data()
-    # assert all(m.rating_count >= 10 for m in all_movies.values())
-    # assert all(0.0 <= m.avg_rating <= 5.0 for m in all_movies.values())
-    # print('All checks passed!')
 
     import python_ta
 

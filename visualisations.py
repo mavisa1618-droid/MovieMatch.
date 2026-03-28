@@ -1,16 +1,16 @@
 """Project 2: MovieMatch: visualisations.py
 
-This module creates an interactive network graph that appears at the bottom of the MovieMatch
-interface. When a user searches for a movie, 100 similar movies are
-arranged around the input movie. Distance from the centre and line thickness reflect similarity: closer
-and thicker means more similar. Top 5 recommendations always show labels. All other movies show
-info on hover only. The user can zoom and pan to explore.
+This module creates an interactive Plotly network graph for MovieMatch.
+When a user searches for a movie, similar movies are arranged around the
+input movie. Distance from the centre and line thickness reflect similarity:
+closer and thicker means more similar. The graph is saved as an HTML file
+and opened in the web browser from the MovieMatch interface.
 
 Implementation inspired by:
 - https://plotly.com/python/network-graphs/
 - https://users.cs.utah.edu/~yos/2021/02/02/plotly-python.html
 
-
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from __future__ import annotations
 import math

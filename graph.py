@@ -3,6 +3,7 @@
 This module builds a weighted graph of movies where each edge represents
 the similarity between two movies based on shared genres, tags, and high raters.
 
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from __future__ import annotations
 from data_loader import Movie
