@@ -1,20 +1,20 @@
 """Project 2: MovieMatch: interface.py
 
 This module builds the MovieMatch application using Tkinter.
-In this interface users type a movie title into the search bar, adjust the minimum rating slider
-if they want, and click search to get 5 recommendations. Each recommendation appears
+Users type a movie title into the search bar, adjust the minimum rating slider,
+and click search to get up to 5 recommendations. Each recommendation appears
 in a table showing the title, average rating, and similarity percentage.
-Clicking a row expands an embedded IMDB page for that movie directly
-inside the window. Below is embedded a plotly network graph that shows the
-connections between the input movie and its 100 top recommendations.
 
+Clicking a row opens the movie's IMDb page in the web browser.
+A clickable label also lets the user open a Plotly network graph in the web browser
+showing connections between the input movie and similar movies.
 """
 
 from __future__ import annotations
 import os
 import webbrowser
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import Optional
 from data_loader import Movie
 from graph import WeightedGraph
@@ -23,13 +23,11 @@ from visualisations import build_graph_figure
 
 BG = '#0a0a12'
 BG2 = '#12121f'
-BG3 = '#080810'
 PURPLE = '#A78BFA'
 PURPLE_DARK = '#4F46E5'
 BLUE = '#60A5FA'
 BORDER = '#1e1e35'
 TEXT = '#ffffff'
-FADED = '#6b6b8a'
 
 
 def _setup_window() -> tk.Tk:
@@ -79,7 +77,7 @@ def _setup_search(window: tk.Tk, titles: list[str]) -> tk.StringVar:
         typed = search_var.get().lower()  # current text
         dropdown.delete(0, tk.END)  # deletes old suggestions
         if not typed:
-            dropdown.pack_forget() # hides dropdown
+            dropdown.pack_forget()  # hides dropdown
             return
 
         matches = [t for t in titles if typed in t.lower()][:8]
@@ -139,8 +137,8 @@ def _setup_results_table(window: tk.Tk) -> ttk.Treeview:
     """Return the results table.
 
     The table has three visible columns: title, average rating, and
-    similarity percentage. A hidden fourth column stores the IMDB ID
-    to load embedded IMDB page when a row is clicked.
+    similarity percentage. A hidden fourth column stores the IMDb ID
+    so the movie's IMDb page can be opened in the web browser when a row is clicked.
     """
     frame = tk.Frame(window, bg=BG)
     frame.pack(pady=10, padx=20, fill='x')
@@ -202,7 +200,7 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
     current_expanded: dict[str, Optional[str]] = {'iid': None}  # dict of which row has imdb_panel open, starts as None
 
     def on_row_click(_event: tk.Event) -> None:
-        """Open or close the IMDB page in browser when a row is clicked."""
+        """Open the IMDb page in the web browser when a row is clicked."""
         iid = table.focus()  # return ID of row selected
         if not iid:  # nothing selected
             return
@@ -268,6 +266,9 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
 
 
 if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+
     import python_ta
 
     python_ta.check_all(config={

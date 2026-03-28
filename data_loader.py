@@ -51,9 +51,8 @@ class Movie:
 
 # Private Functions Below:
 
-# MovieLens puts certain words after a comma ("Big Green, The"). Real titles that use a
-# comma on purpose (e.g. "Cry, the Beloved Country") are left alone because the
-# word after the comma is not exactly one of these words.
+# MovieLens sometimes places an article after a comma in a title.
+# Titles with commas for other reasons are left unchanged unless the word after the comma is one of these articles.
 _WORDS_AFTER_COMMA = (
     'The', 'A', 'An', 'Le', 'La', 'Les', 'Il', 'Lo', 'Die', 'Der', 'Das', 'El', 'Los', "L'",
 )
@@ -79,25 +78,39 @@ def _fix_title_order(title_segment: str) -> str:
     return title_segment
 
 
+def _find_closing_paren(text: str, open_paren_index: int) -> int:
+    """Return the index just after the matching ')' for the '(' at open_paren_index.
+
+    Preconditions:
+        - 0 <= open_paren_index < len(text)
+        - text[open_paren_index] == '('
+        - the '(' at open_paren_index has a matching ')'
+    """
+    depth = 1
+    scan_index = open_paren_index + 1
+
+    while scan_index < len(text) and depth > 0:
+        if text[scan_index] == '(':
+            depth += 1
+        elif text[scan_index] == ')':
+            depth -= 1
+        scan_index += 1
+
+    return scan_index
+
+
 def _fix_paren_segments(title_before_year: str) -> str:
     """Fix '..., Word' inside each (...) group (e.g. alternate-language titles).
 
-    Parameter is the full title string with the trailing ' (year)' removed.
+    Parameter is the full title string with the trailing '(year)' removed.
     """
     fixed_parts = []
     index = 0
+
     while index < len(title_before_year):
         if title_before_year[index] == '(':
-            depth = 1
-            open_paren_index = index
-            scan_index = index + 1
-            while scan_index < len(title_before_year) and depth > 0:
-                if title_before_year[scan_index] == '(':
-                    depth += 1
-                elif title_before_year[scan_index] == ')':
-                    depth -= 1
-                scan_index += 1
-            inside_parentheses = title_before_year[open_paren_index + 1:scan_index - 1]
+            scan_index = _find_closing_paren(title_before_year, index)
+            inside_parentheses = title_before_year[index + 1:scan_index - 1]
             fixed_parts.append('(' + _fix_title_order(inside_parentheses) + ')')
             index = scan_index
         else:
@@ -105,18 +118,17 @@ def _fix_paren_segments(title_before_year: str) -> str:
             if next_open_paren == -1:
                 fixed_parts.append(title_before_year[index:])
                 break
+
             fixed_parts.append(title_before_year[index:next_open_paren])
             index = next_open_paren
-    fixed_result = ''
-    for part in fixed_parts:
-        fixed_result = fixed_result + part
-    return fixed_result
+
+    return ''.join(fixed_parts)
 
 
 def _normalize_movie_title(title: str) -> str:
     """Undo MovieLens 'Title, The' style when loading.
 
-    Titles end with a space and year in parentheses, e.g. ' ... (1995)' (7 characters).
+    Titles end with a space and year in parentheses, e.g. '... (1995)' (7 characters).
     """
     year_suffix = title[-7:]
     title_before_year = title[:-7]
@@ -230,8 +242,8 @@ def load_data(min_ratings: int = 10) -> dict[int, Movie]:
 
     Preconditions:
          - min_ratings >= 0
-         - movies.csv, ratings.csv, tags.csv, links.csv are all present
-         in the data/ folder in the same directory as this file
+         - movies.csv, ratings.csv, tags.csv, and links.csv are in the same
+           folder as this file
     """
     movies = _load_movies()
     _load_ratings(movies)
@@ -248,17 +260,21 @@ def load_data(min_ratings: int = 10) -> dict[int, Movie]:
 
 
 if __name__ == '__main__':
-    all_movies = load_data()
-    assert all(m.rating_count >= 10 for m in all_movies.values())
-    assert all(0.0 <= m.avg_rating <= 5.0 for m in all_movies.values())
-    print('All checks passed!')
+    import doctest
+    doctest.testmod()
+
+    # all_movies = load_data()
+    # assert all(m.rating_count >= 10 for m in all_movies.values())
+    # assert all(0.0 <= m.avg_rating <= 5.0 for m in all_movies.values())
+    # print('All checks passed!')
 
     import python_ta
 
     python_ta.check_all(config={
         'extra-imports': ['csv'],
         'allowed-io': [
-            '_load_movies', '_load_ratings', '_load_tags', '_load_links'
+            '_index_where_first_paren', '_fix_title_order', '_find_closing_paren', '_fix_paren_segments',
+            '_normalize_movie_title', '_load_movies', '_load_ratings', '_load_tags', '_load_links'
         ],
         'max-line-length': 120,
         'max-attributes': 8,

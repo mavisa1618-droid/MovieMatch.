@@ -87,11 +87,10 @@ def _get_expanded_neighbours(movie_id: int, graph: WeightedGraph,
 def recommend_with_min_rating(title: str, graph: WeightedGraph,
                               movies: dict[int, Movie],
                               min_rating: float) -> list[tuple[Movie, float]]:
-    """Returns at most 5 movie recommendations that have the minimum rating.
+    """Return at most 5 movie recommendations whose average rating is at least min_rating.
 
     Searches direct neighbours and neighbours of neighbours for qualifying movies.
     If no movies have at least min_rating, returns an empty list.
-
 
     Preconditions:
         - len(movies) > 0
@@ -106,16 +105,11 @@ def recommend_with_min_rating(title: str, graph: WeightedGraph,
     all_candidates = _get_expanded_neighbours(movie_id, graph, movies)
 
     qualifying = [(m, s) for m, s in all_candidates if m.avg_rating >= min_rating]
-    fallback = [(m, s) for m, s in all_candidates if m.avg_rating < min_rating]
 
     if not qualifying:
         return []
 
-    result = qualifying[:5]
-    if len(result) < 5:
-        result += fallback[:5 - len(result)]
-
-    return result
+    return qualifying[:5]
 
 
 if __name__ == '__main__':
