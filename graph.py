@@ -112,9 +112,9 @@ def combined_similarity(movie1: Movie, movie2: Movie) -> float:
     """Return the combined similarity score between two movies.
 
     The score is a weighted average of three components:
-        - 40% genre similarity: proportion of shared genres
-        - 40% tag similarity: proportion of shared user-reported tags
-        - 20% user similarity: proportion of shared users who rated both movies >= 4.0
+        - 20% genre similarity: proportion of shared genres
+        - 30% tag similarity: proportion of shared user-reported tags
+        - 50% user similarity: proportion of shared users who rated both movies >= 4.0
 
     The final score is between 0.0 and 1.0, where higher scores indicate higher similarity.
 
@@ -126,14 +126,14 @@ def combined_similarity(movie1: Movie, movie2: Movie) -> float:
     tag_score = overlap_similarity(movie1.tags, movie2.tags)
     user_score = overlap_similarity(movie1.high_raters, movie2.high_raters)
 
-    return round(0.4 * genre_score + 0.4 * tag_score + 0.2 * user_score, 4)
+    return round(0.2 * genre_score + 0.3 * tag_score + 0.5 * user_score, 4)
 
 
 def build_from_movies(movies: dict[int, Movie]) -> WeightedGraph:
     """Build and return a WeightedGraph from the movies.
 
     Each movie becomes a vertex. An edge is added between two movies
-    if their combined similarity score is >= 0.3.
+    if their combined similarity score is >= 0.2.
 
     Preconditions:
         - len(movies) > 0
@@ -149,7 +149,7 @@ def build_from_movies(movies: dict[int, Movie]) -> WeightedGraph:
             movie1 = movie_list[i]
             movie2 = movie_list[j]
             score = combined_similarity(movie1, movie2)
-            if score >= 0.3:
+            if score >= 0.2:
                 graph.add_edge(movie1.movie_id, movie2.movie_id, score)
 
     return graph
