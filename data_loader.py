@@ -128,11 +128,7 @@ def _fix_paren_segments(title_before_year: str) -> str:
             fixed_parts.append(title_before_year[index:next_open_paren])
             index = next_open_paren
 
-    fixed_result = ''
-    for part in fixed_parts:
-        fixed_result += part
-
-    return fixed_result
+    return ''.join(fixed_parts)
 
 
 def _normalize_movie_title(title: str) -> str:
@@ -288,7 +284,7 @@ if __name__ == '__main__':
     import python_ta
 
     python_ta.check_all(config={
-        'extra-imports': ['csv'],
+        'extra-imports': ['csv', 'os'],
         'allowed-io': [
             '_index_where_first_paren', '_fix_title_order', '_find_closing_paren', '_fix_paren_segments',
             '_normalize_movie_title', '_load_movies', '_load_ratings', '_load_tags', '_load_links'
