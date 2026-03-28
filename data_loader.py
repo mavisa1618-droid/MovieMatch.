@@ -7,7 +7,6 @@ Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from __future__ import annotations
 import csv
-import os
 
 
 class Movie:
@@ -156,12 +155,6 @@ def _normalize_movie_title(title: str) -> str:
     return _fix_title_order(main_title) + ' ' + suffix_in_parentheses + year_suffix
 
 
-def _csv_path(filename: str) -> str:
-    """Return the absolute path to a csv file stored in the same folder as this module."""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(current_dir, filename)
-
-
 def _load_movies() -> dict[int, Movie]:
     """
     Returns a mapping of movie_id to Movie object form movies.csv.
@@ -173,7 +166,7 @@ def _load_movies() -> dict[int, Movie]:
     """
     movies = {}
 
-    with open(_csv_path('movies.csv'), 'r', newline='', encoding='utf-8') as movie_file:
+    with open('movies.csv', 'r', newline='', encoding='utf-8') as movie_file:
         reader = csv.reader(movie_file)
         next(reader)
         for row in reader:
@@ -204,7 +197,7 @@ def _load_ratings(movies: dict[int, Movie]) -> None:
     sum_ratings = {}
     count_ratings = {}
 
-    with open(_csv_path('ratings.csv'), 'r', newline='', encoding='utf-8') as ratings_file:
+    with open('ratings.csv', 'r', newline='', encoding='utf-8') as ratings_file:
         reader = csv.reader(ratings_file)
         next(reader)
         for row in reader:
@@ -226,7 +219,7 @@ def _load_tags(movies: dict[int, Movie]) -> None:
 
         Tags are converted to lowercase and surrounding whitespace is stripped.
         """
-    with open(_csv_path('tags.csv'), 'r', newline='', encoding='utf-8') as tags_file:
+    with open('tags.csv', 'r', newline='', encoding='utf-8') as tags_file:
         reader = csv.reader(tags_file)
         next(reader)
         for row in reader:
@@ -242,7 +235,7 @@ def _load_links(movies: dict[int, Movie]) -> None:
     The full URL is constructed in interface.py:
             https://www.imdb.com/title/tt{imdb_id}/
     """
-    with open(_csv_path('links.csv'), 'r', newline='', encoding='utf-8') as links_file:
+    with open('links.csv', 'r', newline='', encoding='utf-8') as links_file:
         reader = csv.reader(links_file)
         next(reader)
         for row in reader:
@@ -284,7 +277,7 @@ if __name__ == '__main__':
     import python_ta
 
     python_ta.check_all(config={
-        'extra-imports': ['csv', 'os'],
+        'extra-imports': ['csv'],
         'allowed-io': [
             '_index_where_first_paren', '_fix_title_order', '_find_closing_paren', '_fix_paren_segments',
             '_normalize_movie_title', '_load_movies', '_load_ratings', '_load_tags', '_load_links'
