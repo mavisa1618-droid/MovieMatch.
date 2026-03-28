@@ -3,6 +3,7 @@
 This module looks up movies by title and returns
 the top 5 most similar movie recommendations using the weighted graph.
 
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from __future__ import annotations
 from data_loader import Movie

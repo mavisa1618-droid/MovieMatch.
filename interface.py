@@ -8,6 +8,8 @@ in a table showing the title, average rating, and similarity percentage.
 Clicking a row opens the movie's IMDb page in the web browser.
 A clickable label also lets the user open a Plotly network graph in the web browser
 showing connections between the input movie and similar movies.
+
+Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 
 from __future__ import annotations
