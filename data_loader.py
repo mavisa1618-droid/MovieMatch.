@@ -51,6 +51,88 @@ class Movie:
 
 # Private Functions Below:
 
+# MovieLens puts certain words after a comma ("Big Green, The"). Real titles that use a
+# comma on purpose (e.g. "Cry, the Beloved Country") are left alone because the
+# word after the comma is not exactly one of these words.
+_WORDS_AFTER_COMMA = (
+    'The', 'A', 'An', 'Le', 'La', 'Les', 'Il', 'Lo', 'Die', 'Der', 'Das', 'El', 'Los', "L'",
+)
+
+
+def _index_where_first_paren(text: str, start: int) -> int:
+    """Return the index of the first '(' at or after start, or -1 if there is none."""
+    i = start
+    while i < len(text):
+        if text[i] == '(':
+            return i
+        i = i + 1
+    return -1
+
+
+def _fix_title_order(title_segment: str) -> str:
+    """If title_segment is 'Name, Word' with Word in _WORDS_AFTER_COMMA, return 'Word Name'."""
+    if ', ' not in title_segment:
+        return title_segment
+    before_comma, after_comma = title_segment.rsplit(', ', 1)
+    if after_comma in _WORDS_AFTER_COMMA:
+        return after_comma + ' ' + before_comma
+    return title_segment
+
+
+def _fix_paren_segments(title_before_year: str) -> str:
+    """Fix '..., Word' inside each (...) group (e.g. alternate-language titles).
+
+    Parameter is the full title string with the trailing ' (year)' removed.
+    """
+    fixed_parts = []
+    index = 0
+    while index < len(title_before_year):
+        if title_before_year[index] == '(':
+            depth = 1
+            open_paren_index = index
+            scan_index = index + 1
+            while scan_index < len(title_before_year) and depth > 0:
+                if title_before_year[scan_index] == '(':
+                    depth += 1
+                elif title_before_year[scan_index] == ')':
+                    depth -= 1
+                scan_index += 1
+            inside_parentheses = title_before_year[open_paren_index + 1:scan_index - 1]
+            fixed_parts.append('(' + _fix_title_order(inside_parentheses) + ')')
+            index = scan_index
+        else:
+            next_open_paren = _index_where_first_paren(title_before_year, index)
+            if next_open_paren == -1:
+                fixed_parts.append(title_before_year[index:])
+                break
+            fixed_parts.append(title_before_year[index:next_open_paren])
+            index = next_open_paren
+    fixed_result = ''
+    for part in fixed_parts:
+        fixed_result = fixed_result + part
+    return fixed_result
+
+
+def _normalize_movie_title(title: str) -> str:
+    """Undo MovieLens 'Title, The' style when loading.
+
+    Titles end with a space and year in parentheses, e.g. ' ... (1995)' (7 characters).
+    """
+    year_suffix = title[-7:]
+    title_before_year = title[:-7]
+    title_before_year = _fix_paren_segments(title_before_year)
+    open_paren_index = _index_where_first_paren(title_before_year, 0)
+    if open_paren_index == -1:
+        return _fix_title_order(title_before_year) + year_suffix
+    main_title = title_before_year[:open_paren_index]
+    end = len(main_title)
+    while end > 0 and main_title[end - 1] == ' ':
+        end = end - 1
+    main_title = main_title[:end]
+    suffix_in_parentheses = title_before_year[open_paren_index:]
+    return _fix_title_order(main_title) + ' ' + suffix_in_parentheses + year_suffix
+
+
 def _load_movies() -> dict[int, Movie]:
     """
     Returns a mapping of movie_id to Movie object form movies.csv.
@@ -67,7 +149,7 @@ def _load_movies() -> dict[int, Movie]:
         for row in reader:
             movie_id = int(row[0])
             genres_raw = row[2]
-            title = row[1]
+            title = _normalize_movie_title(row[1])
 
             if genres_raw == '(no genres listed)':
                 genres = set()
