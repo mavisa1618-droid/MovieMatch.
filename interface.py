@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import webbrowser
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import Optional
 from data_loader import Movie
 from graph import WeightedGraph
@@ -78,13 +78,19 @@ def _setup_search(window: tk.Tk, titles: list[str]) -> tk.StringVar:
         """Update the dropdown list as the user types."""
         typed = search_var.get().lower()  # current text
         dropdown.delete(0, tk.END)  # deletes old suggestions
-        matches = [t for t in titles if typed in t.lower()][:8]  # takes first 8 movies with titles that contain typed
-        if typed and matches:  # if user has typed something and there exists matches
+        if not typed:
+            dropdown.pack_forget() # hides dropdown
+            return
+
+        matches = [t for t in titles if typed in t.lower()][:8]
+
+        if matches:
             for match in matches:
-                dropdown.insert(tk.END, match)  # add match to bottom of dropdown
-            dropdown.pack(fill='x')  # dropdown visible
+                dropdown.insert(tk.END, match)
         else:
-            dropdown.pack_forget()  # hides dropdown
+            dropdown.insert(tk.END, 'No movies match')
+
+        dropdown.pack(fill='x')  # show dropdown
 
     def on_select(_event: tk.Event) -> None:  # when suggestion clicked
         """Fill the search bar when the user clicks a suggestion."""
