@@ -61,7 +61,7 @@ def _load_movies() -> dict[int, Movie]:
 
     """
     movies = {}
-    with open('data/movies.csv', 'r') as movie_file:
+    with open('movies.csv', 'r') as movie_file:
         reader = csv.reader(movie_file)
         next(reader)
         for row in reader:
@@ -92,7 +92,7 @@ def _load_ratings(movies: dict[int, Movie]) -> None:
     sum_ratings = {}
     count_ratings = {}
 
-    with open('data/ratings.csv', 'r') as ratings_file:
+    with open('ratings.csv', 'r') as ratings_file:
         reader = csv.reader(ratings_file)
         next(reader)
         for row in reader:
@@ -114,7 +114,7 @@ def _load_tags(movies: dict[int, Movie]) -> None:
 
         Tags are converted to lowercase and surrounding whitespace is stripped.
         """
-    with open('data/tags.csv', 'r') as tags_file:
+    with open('tags.csv', 'r') as tags_file:
         reader = csv.reader(tags_file)
         next(reader)
         for row in reader:
@@ -130,7 +130,7 @@ def _load_links(movies: dict[int, Movie]) -> None:
     The full URL is constructed in interface.py:
             https://www.imdb.com/title/tt{imdb_id}/
     """
-    with open('data/links.csv', 'r') as links_file:
+    with open('links.csv', 'r') as links_file:
         reader = csv.reader(links_file)
         next(reader)
         for row in reader:
