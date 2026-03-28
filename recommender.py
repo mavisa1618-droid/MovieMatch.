@@ -13,7 +13,7 @@ def title_to_id(movies: dict[int, Movie]) -> dict[str, int]:
     """Return a mapping of movie title to movie_id for all movies.
 
     This is used by the search bar in interface.py to look up a movie ID
-    from a title typed by the user.
+    from a title given by the user.
 
     Preconditions:
         - len(movies) > 0
@@ -55,6 +55,67 @@ def recommend(title: str, graph: WeightedGraph, movies: dict[int, Movie]) -> lis
     neighbours = graph.get_neighbours(movie_id)
 
     return neighbours[:5]
+
+
+def _get_expanded_neighbours(movie_id: int, graph: WeightedGraph,
+                             movies: dict[int, Movie]) -> list[tuple[Movie, float]]:
+    """Return all direct and indirect neighbours sorted by similarity.
+
+    Indirect similarity is the product of the two scores.
+    Keeps the highest score always.
+    """
+    seen: dict[int, float] = {}
+    direct = graph.get_neighbours(movie_id)
+
+    for movie, score in direct:
+        seen[movie.movie_id] = score
+
+    for movie, score in direct:
+        for neighbour, neighbour_score in graph.get_neighbours(movie.movie_id):
+            if neighbour.movie_id == movie_id:
+                continue
+            indirect = score * neighbour_score
+            if neighbour.movie_id not in seen or seen[neighbour.movie_id] < indirect:
+                seen[neighbour.movie_id] = indirect
+
+    return sorted(
+        [(movies[mid], s) for mid, s in seen.items() if mid in movies],
+        key=lambda x: x[1], reverse=True
+    )
+
+
+def recommend_with_min_rating(title: str, graph: WeightedGraph,
+                              movies: dict[int, Movie],
+                              min_rating: float) -> list[tuple[Movie, float]]:
+    """Returns at most 5 movie recommendations that have the minimum rating.
+
+    Searches direct neighbours and neighbours of neighbours for qualifying movies.
+    If no movies have at least min_rating, returns an empty list.
+
+
+    Preconditions:
+        - len(movies) > 0
+        - 0.0 <= min_rating <= 5.0
+    """
+    title_map = title_to_id(movies)
+
+    if title not in title_map:
+        return []
+
+    movie_id = title_map[title]
+    all_candidates = _get_expanded_neighbours(movie_id, graph, movies)
+
+    qualifying = [(m, s) for m, s in all_candidates if m.avg_rating >= min_rating]
+    fallback = [(m, s) for m, s in all_candidates if m.avg_rating < min_rating]
+
+    if not qualifying:
+        return []
+
+    result = qualifying[:5]
+    if len(result) < 5:
+        result += fallback[:5 - len(result)]
+
+    return result
 
 
 if __name__ == '__main__':
