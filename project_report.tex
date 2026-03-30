@@ -4,8 +4,11 @@
 \usepackage[margin=0.75in]{geometry}
 \usepackage{xcolor}
 \usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{hyperref}
 
-\title{CSC111 Project Proposal: \textbf{MovieMatch: Discovering Similar Films Through Networks and BSTs}}
+\title{CSC111 Project Proposal:\\
+\textbf{MovieMatch: Discovering Similar Films Through Networks}}
 \author{Mavi Ramos Sanchez, Syaikha Faiza Arifin, Capucine Crouzet, Tamima Wadageri}
 \date{\today}
 
@@ -16,82 +19,210 @@
 
 Movie streaming catalogs are huge, and users often struggle to quickly find films they will enjoy. Many platforms address this issue using recommendation systems, tools that help users discover similar and relevant content. These systems attempt to predict what users will enjoy using limited data about what they have already watched. However, they can feel like a “black box,” and people seldom know why something is recommended. \\
 
-Recommendations usually rely on user demographics, viewing history, and genre labels, and may also be influenced by platform interests. From our own experience, a major user issue is that platforms combine several recommendation strategies and rarely provide features that suggest movies based on a single film. Sometimes we simply want to watch something very similar to one movie without our history or demographics influencing the results. In some cases, recommendation systems go too far and basically typecast users, presenting only one type of media, which can lead to exhaustion and over-saturation. Furthermore, a single platform typically recommends only movies that are available within its own catalog. \\
+Recommendations usually rely on user demographics, viewing history, and genre labels, and may also be influenced by platform interests. From our own experience, a major user issue is that platforms combine several recommendation strategies and rarely provide features that suggest movies based on a single film. Sometimes we simply want to watch something very similar to one movie without our history or demographics influencing the results. In some cases, recommendation systems go too far and basically typecast users, presenting only one type of media, which can lead to exhaustion and over-saturation. Furthermore, a single platform typically recommends only movies that are available within its own catalog (1, 2). \\
 
-Our project seeks to address this limitation by using content-based filtering focused on a single movie. This approach recommends items with similar attributes rather than relying on what other users watched. Platforms tend to merge strategies for their systems, but what we seek to do is most similar to content-based filtering. The idea behind our project is most effective in its specificity: the user’s intention should be "forget my watch history, my demographics, and just recommend something similar based on one movie I liked." \\
+Our project seeks to address this limitation by using content-based filtering focused on a single movie. This approach recommends items with similar attributes rather than relying on what other users watched. Platforms tend to merge strategies for their systems (1), but what we seek to do is most similar to content-based filtering (3). The idea behind our project is most effective in its specificity: the user’s intention should be "forget my watch history, my demographics, and just recommend something similar based on one movie I liked." \\
 
 To do this, we will use the dataset that includes self-reported tags by other users, which makes the recommendations more based on the user's experience of watching the movies rather than relying solely on official genre labels. For example, user tags can capture qualities such as "mind-bending," "feel-good," or "dark comedy" that genre labels like "Sci-Fi" or "Comedy" cannot fully describe. These data make it possible to model connections between movies through shared user watch experience.  \\
 
-Our project aims to create a recommendation tool that allows users to receive suggestions based on a single movie. The system will not only identify similar films but also prioritize the highest-rated ones, addressing both relevance and quality.\\
+Our project aims to create a recommendation tool that allows users to receive suggestions based on a single movie. The system will not only identify similar films but also prioritize the highest-rated ones, addressing both relevance and quality (3).\\ 
 
-This raises the following question: \textbf{How can we recommend similar movies (sorted by rating) to people based on a single movie they liked, using a graph of tag and genre similarities combined with a binary search tree for sorting?} \\
+This raises the following question: \textbf{How can we recommend similar movies (sorted by rating) to people based on a single movie they liked, using a graph of tag, genre and user similarities?} \\
 
-\section*{Computational Plan}
-
-Our system will use the following computations. First, we process the CSV files and the data by splitting the user tags so that each movie stores its tags in a set. We also compute the average rating from all user ratings. Next, we build the similarity graph where each movie is a node. Two movies get connected by an edge if they are sufficiently similar based on their genres and tags. \\
-
-To measure similarity, we will count the number of  genres that two movies have in common, and divide this result by the total number of unique genres that they share (intersection). For example, if Movie A has {Action, Sci-Fi, Thriller} and Movie B has {Action, Sci-Fi}, they share 2 genres out of 3 total unique ones, so the genre similarity is 2/3 = 0.67. We then do the same for the user tags. The two scores are then combined using a weighted average (60\% genres, 40\% tags) to obtain an overall similarity score. If this score is greater than 0.3 (this threshold might be modified but is a rough estimate of what is expected), we create an edge between the two movies in the graph. \\
-
-When a user picks a movie, we examine all of  its neighbors by traversing the graph and limit candidates to the top 50 most similar ones that have at least 10 ratings. After identifying these similar movies using the graph, we then need to present the best ones first. To do so, we insert each candidate movie into a binary search tree, using its rating as the key and the number of ratings as a tie-breaker when ratings are identical. \\
-To obtain movies sorted from highest to lowest rating, we take advantage of the BST property and perform reverse traversal, visiting the right subtree first, then the root, and finally the left subtree, in order to extract the movie object nodes of the BST in descending order. This gives us all the movies in descending rating order. Finally, we return the top 5 highest rated similar movies as recommendations. \\
-
-We will use the MovieLens "latest-small" dataset which can be accessed here https://grouplens.org/datasets/movielens/, and is also referenced below. This dataset contains 100,836 ratings and 3,683 tag applications across 9,742 movies from 610 users, generated in September 2018. The data is organized into four CSV files named here along with sample data for each:
+\section*{Dataset}
+We used the MovieLens "latest-small" dataset which can be accessed here https://grouplens.org/datasets/movielens/, and is also referenced below (4). This dataset contains 100,836 ratings and 3,683 tag applications across 9,742 movies from 610 users, generated in September 2018. The data is organized into four CSV files named here along with sample data for each: 
 \begin{itemize}
-    \item \textbf{movies.csv} (9,742 rows)
+    \item \textbf{movies.csv} (9,742 rows) contains movie metadata
     Sample data: (movieId = 1, title = ``Toy Story (1995)'', \\
     genres = ``Adventure|Animation|Children|Comedy|Fantasy'')
 
-    \item \textbf{tags.csv} (3,683 rows)
-    Sample data: (userId = 15, movieId = 339, tag = ``sandra bullock'', \\
+    \item \textbf{tags.csv} (3,683 rows) contains user-generated tags describing the movie
+    \\
+    Sample data: (userId = 15, movieId = 339, tag = ``sandra bullock'', 
     timestamp = 1138047411)
 
-    \item \textbf{ratings.csv} (100,836 rows)
+    \item \textbf{ratings.csv} (100,836 rows) contains user ratings for the movie
+    \\
     Sample data: (userId = 1, movieId = 31, rating = 2.5, timestamp = 1260759144)
 
-    \item \textbf{links.csv} (9,742 rows)
+    \item \textbf{links.csv} (9,742 rows) provides mapping to external movie databases such as IMDb and TMDb.
+    \\
     Sample data: (movieId = 1, imdbId = 0114709, tmdbId = 862) \\
 \end{itemize}
 
-For visualization,we will create a desktop application using Tkinter for the interface and Plotly to display the network graph. Our previous experience with Tkinter will allow us to design windows with input fields where users can enter a movie title and a minimum rating filter. When the user clicks the recommendation search button, the system displays the top 5 recommendations in a Tkinter table showing information about each movie, including its title and rating matching genres and tags and similarity percentage. \\
-We also plan to embed the Plotly visualization within the Tkinter interface to display the network graph and highlight the position of the similar movie in the graph. Edge thickness will represent the similarity proportion calculated between vertices (indicating the strength of similarity), while node size will represent the movie rating to improve readability. \\
+\section*{Computational Overview}
+\begin{itemize}
+    \item Data loading and Representation in \textbf{data\_loader.py}
+    \\
+    \\
+    \textbf{data\_loader.py} is responsible for loading, cleaning, and organizing the MovieLens dataset into a structured format that can be used by the rest of the program. It defines a Movie class, which stores all important information for each film, including its movie\_id, title, genres, tags, average rating, rating count, IMDb ID, and the set of users who rated the movie highly.
+    \\
+    The module loads data from four separate dataset files. 
+    \begin{itemize}
+        \item The \textbf{\_load\_movies} function reads movies.csv and creates one Movie object for each row, storing the title and genre information.
+        \item The \textbf{\_load\_ratings} function reads ratings.csv and computes each movie’s average rating and number of ratings, while also recording users who gave ratings of at least 4.0 in the high\_raters set.
+        \item The \textbf{\_load\_tags} function reads tags.csv and cleans the tag text by converting it to lowercase and removing extra spaces before storing it in each Movie object.
+        \item The \textbf{\_load\_links} reads links.csv and stores each movie’s IMDb identifier so that the interface can later generate clickable IMDb links.
+    \end{itemize}
+    
+    The public function \textbf{load\_data} combines all of these steps into one pipeline. After loading the Movie objects, it filters out movies with too few ratings by keeping only those with at least a minimum number of ratings, which is 10 by default.  
+    
+    \item Build the graph in \textbf{graph.py}
+    \\
+    \\
+    \textbf{graph.py} is the main module that constructs the recommendation network as a weighted graph. In this structure, each movie is represented as a vertex, and an edge is added between two movies when they are sufficiently similar. The module defines a private \textbf{\_Vertex} class, which stores a Movie object together with its neighbouring vertices and edge weights, and a public WeightedGraph class, which stores all vertices in a dictionary keyed by movie\_id. This design allows the program to efficiently organize movie relationships and retrieve neighbouring movies when generating recommendations.
+    \\
+    \\
+    The graph uses weighted edges to represent how similar two movies are. This similarity is computed using: 
+    \begin{itemize}
+        \item The helper function \textbf{overlap\_similarity}, which measures the proportion of shared elements between two sets by dividing the size of the intersection by the size of the union.
+        \item The \textbf{combined\_similarity} function applied to three types of movie data: genres, user-generated tags, and the set of users who rated the movie at least 4.0, stored as high\_raters.
+        \item Then, the final similarity score is a weighted average of these three components, with 20\% from genres, 30\% from tags, and 50\% from shared high raters. This makes the graph more informative because it combines official metadata, descriptive user tags, and strong positive audience overlap into one score.
+    \end{itemize}
+    
+    The function \textbf{build\_from\_movies} creates the full graph from the processed movie dictionary. First, it adds every movie as a vertex. Then it compares every pair of movies, calculates their combined similarity score, and adds an undirected edge if the score is at least 0.2. This threshold ensures that only meaningful relationships are stored in the graph. Once built, the graph becomes the computational foundation of the project, since other modules use it to retrieve similar neighbours, rank recommendation candidates, and visualize the movie network in the interface.
 
-We have decided to use Plotly (if we have time) to create interactive visualizations such as network graphs and tables, which we will embed within windows of a desktop GUI built using the Tkinter library in python. We will use Plotly tools such as plotly.graph\_objects.Scatter() to create the visualization of network nodes and edges, as previously described, with edge thickness representing similarity. \\
-In addition, plotly.graph\_objects.FigureWidget() will allow us to embed integrative graphs in the Tkinter interface. For the Tkinter interface itself, we will use tk.Entry() for the search box (where the user can input the movie title), and tk.Scale() for sliders (which we have mentioned above). To display the recommendation table, we will use tk.Listbox() or ttk.Treeview() (most likely the latter since we aim to present the results in a tabular format to transparently show the features influencing the recommendations as previously described).
+    \item Recommendation Algorithm in \textbf{recommender.py}
+    \\
+    \\
+    \textbf{recommender.py} is responsible for generating movie recommendations from the weighted graph. Its main role is to take a movie title entered by the user, locate the corresponding movie in the dataset, retrieve similar movies from the graph, and return a ranked list of recommendations. This module acts as the link between the graph structure and the user interface, because it transforms graph neighbours into recommendation results that can be displayed to the user.
 
+    Here, we implemented:
+    \begin{itemize}
+        \item \textbf{title\_to\_id} function. This function creates a dictionary that maps each movie title to its corresponding movie\_id. It allows the program to quickly convert a title entered by the user into the identifier used by the graph structure.
+        \item \textbf{recommend} function. This function returns the top 5 most similar movies to the input title by using the weighted graph. It first checks whether the title exists in the dataset, then retrieves the neighbouring movies of the selected movie through the graph. 
+        \item \textbf{\_get\_expanded\_neighbours}.Instead of considering only direct neighbours, this function also explores neighbours of neighbours. Indirect similarity is calculated as the product of the two edge weights along the path, and if the same movie can be reached through multiple paths, only the highest score is kept.
+    \end{itemize}
+    Then, the main function used by the interface is \textbf{recommend\_with\_min\_rating}. After retrieving all direct and indirect neighbours, it filters the candidates by a minimum average rating chosen by the user. Only movies whose avg\_rating is at least the selected threshold are kept, and the top 5 qualifying results are returned. This means the module does not only recommend similar movies, but also ensures that the suggested films meet a quality standard set by the user.
+
+    \item Generating the graph in \textbf{visualisations.py}
+    \\
+    \\
+    \textbf{visualisations.py} is responsible for generating an interactive network graph that appears at the bottom of the MovieMatch interface. Its main role is to take a movie title entered by the user, filter the dataset to retrieve up to 100 movies most similar to the input one, build the structure of the graph by associating (x, y) coordinates to each node, and return the display of the weighted graph. The implementation of this module requires the Plotly library and was inspired by external sources (5, 6, 8).
+    
+    The module uses weighted edges (various thickness) and distance from the central node to reflect different levels of similarity. More specifically: 
+    \begin{itemize}
+        \item The \textbf{\_get\_hundred\_movies} helper function takes the id of a movie and iterates over all of its neighbours, and over neighbours of neighbours too, in order to locate and return up to 100 potential recommendations. It maps each candidate to its similarity score, and sorts the collection in descending order.
+        \item The \textbf{\_compute\_positions} helper function returns the (x, y) coordinates of the nodes of the 100 candidates using the math module. To do so, the function assigns a radius value to every movie, based on the similarity score, and a specific angle that is computed using the golden ratio so that each node spreads circularly around the center without overlapping another one. 
+        \item All four helpers \textbf{\_build\_edge\_traces}, \textbf{\_build\_top5\_trace}, \textbf{\_build\_other\_trace}, and \textbf{\_build\_input\_trace} construct the visual structure of the graph by defining the vertices and edges display, and using the Plotly tool go.Scatter() (5). They respectively return: the lines from the input movie, at the center, to each neighbour, assigning different colors that separate the top-5 recommendations from the others; the display of the top 5 nodes, which labels always appear; the display of all the non-top-5 nodes, which labels only appear when the cursor is on the node; and finally, the display of the input movie node at the center, which is bigger than the other ones and always appears. 
+    \end{itemize}
+    \textbf{build\_graph\_figure} is the most important component and uses all the functions defined above. It first retrieves the top-5 recommendations, all hundred movie candidates, and the position of each node using a comprehension and the first two functions. Then, it builds all the necessary traces and uses them to generate the desired graph (with the Plotly tool go.Figure()).\\
+    
+
+    \item Generating the interactive display in \textbf{interface.py}
+    \\
+    \\
+    This module builds the MovieMatch application using Tkinter (7). All components that users will interact with are implemented here, including the search bar, the minimum rating slider, the search button, the recommendations table, and the graph display window. The color palette we used is defined at the top of the file, as global constants. 
+
+    In details: 
+    \begin{itemize}
+        \item The \textbf{\_setup\_window} generates, as its name suggests, the main window using the Tkinter module (tk.Tk()). 
+        \item The \textbf{\_setup\_search} function, along with \textbf{on\_type} and \textbf{on\_select}, configure the search bar and auto-complete drop-down functionality. If no movies in the dataset correspond to the user's input, a 'No movies match' message appears. The function returns the search variable. Tkinter tools used: tk.Frame(), tk.Label(), tk.Entry(), tk.Listbox().
+        \item The \textbf{\_setup\_slider} function creates the minimum rating slider that the users can drag to filter out recommendations below a certain average rating. It initializes $<rating\_var>$ (tk.DoubleVar()), which is then being updated whenever the user makes a change, and returned by the function. Tkinter tools used: tk.Frame(), tk.Label(), tk.Scale().
+        \item The \textbf{\_setup\_results\_table} function creates the table's three visible columns: title, average rating, and similarity percentage (ttk.Treeview()). Important note: a hidden fourth column stores the IMDb ID to load embedded IMDb page when a row is clicked (no proportions nor heading attributed to this column). Tkinter tools used: tk.Frame(), tk.Label(), ttk.Style().
+    \end{itemize}
+    All functions above are being called within the body of \textbf{run\_app}, which combines everything to create the full interface (MovieMatch window). In addition, two new functions are created: \textbf{on\_row\_click} and \textbf{on\_search}, which, respectively, allow the users to access the external IMDb page associated with the movie they click on, to get additional information (using webbrowser.open()); and progressively update the table and graph according to the users actions. Tkinter tools used: tk.Label(), tk.Event(), tk.END(). 
+
+    \item Putting everything together in \textbf{main.py}
+    \\
+    \\
+    \textbf{main.py} loads the data and builds the graph and the interface. This is where MovieMatch runs. \\
+    It imports \textbf{load\_data} from \textbf{data\_loader.py}, \textbf{build\_from\_movies} from \textbf{graph.py}, and \textbf{run\_app} from \textbf{interface.py}. 
+\end{itemize}
+
+\section*{Obtaining datasets and running the program}
+\begin{itemize}
+    \item \textbf{To install} \\ 
+    Our program uses the Python libraries \textbf{python-ta} for testing and code checking, as well as \textbf{plotly} for graphics and visualization.
+
+    \item \textbf{To download} \\
+    In order to access the datasets, please download the zip file \textbf{data} provided on MarkUs.
+
+    \item \textbf{To run} \\
+    Run \textbf{main.py}. As a result of our program, one should expect to see an external window appear (see screenshot below). To interact with the interface, please select the search bar and type the title of any movie you can think of (note that the search option is not case-sensitive; and there is no need of typing the full title, keywords also work). \\
+    Then, if you wish, you can choose to change the minimum raiting value using the slider, and finally click on the search button. Once the top-5 recommendations appear, you can click on each one of them and it will redirect you to the corresponding IMDb page associated with the movie.\\
+    In addition, click on $'Want\ to\ see\ the\ graph?\ Click\ here!'$ to visualize the graph associated with the input movie. \\
+    Note: you can navigate through the graph and see what the other vertices are!
+    (See last screenshot to get a glimpse of the graph). 
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75\linewidth]{MovieMatchWindow.png}
+        \caption{MovieMatch interface initial state}
+        \label{fig:placeholder}
+    \end{figure} 
+    
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75\linewidth]{MM2.png}
+        \caption{Movie Match interface when used}
+        \label{fig:placeholder}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75\linewidth]{graph2.png}
+        \caption{Network graph associated with the input movie}
+        \label{fig:placeholder}
+    \end{figure}
+
+\end{itemize} \\
+
+\section*{Changes to initial project plan}
+
+The final version of our project follows the same guidelines as our proposal. However, we made a few changes to our computational plan as listed below. 
+    \begin{itemize}
+    \item The first major decision we made was to not use a Binary Search Tree to obtain the pre-filtered most similar movies that would contain the top-5 recommendations. We indeed realized, thanks to the TA's feedback and to a discussion during office hours, that we could obtain the same result simply using a list and the built-in sorted() function. We decided not to expend the BST's role to preserve our original intentions.  
+    \item We have also made the decision to increase the number of pre-filtered candidates (movies with at least 10 ratings) from 50 to 100 movies. As our rating slider increases the minimum rating value, the filtering condition becomes stricter, and so fewer movies are meeting the requirements to appear in the table. Therefore, this is a security adjustment and in terms of scale, it does not take that much more time to traverse 100 items instead of 50.
+    \item Next, we added a third component to the computation of the similarity score. In addition to the proportions of shared genres and tags, we figured that we could benefit from a user similarity parameter: the proportion of shared users that rated both the input movie and the one that is being visited higher than 4.0. This adds an extra layer of precision to our algorithm, as user subjectivity is taken into account alongside factual information such as genres. Note that tags are both objective and subjective.
+    \item Finally, because we ended up having three parameters for the similarity score computation, we had to modify the different coefficients assigned to each one of them. Our initial pick was 60/40 genre/tag weighting, but it was a little bit arbitrary as the TA notified. At first, we decided to do 40/40/20 genre/tag/user, but we eventually judged that genre was very general information and the least user-based, therefore, the least important parameter. We then tried 20/40/40, 30/60/10, and so on. After a lot of testing and adjusting, we eventually came to the conclusion that 20/30/50 genre/tag/user was the best weighting, because we had better results on average. 
+    \end{itemize}
+
+\section*{Discussion}
+
+Our project aimed to create a recommendation tool that allows users to receive suggestions based on a single movie. Specifically, our goal was to optimize the way films are recommended, following the model of streaming platforms, but supplying the algorithm with user-reported data and using only one movie at a time, thereby improving accuracy. To do so, the plan was to create a graph of tag, genre and user similarities, and return the top-5 recommendations. \\
+Judging by the quality of the MovieMatch interface and the consistency of its recommendations, it appears that we achieved this goal. In addition to its effectiveness, the interface offers a genuine user experience as it enables interaction in multiple ways (minimum rating slider, interactive table, graph display). \\
+
+Throughout the project, we encountered several limitations related to the data, the tools we used, and technical constraints. First, the dataset itself presented challenges. Indeed, the initial format of movie titles was not well suited for the search feature (e.g. “Italian Job, The (2003)” appears in the dataset, instead of “The Italian Job (2003)”), which required additional processing to make it non-case-sensitive. Furthermore, not all movies had associated tags, so we had to filter the dataset, reducing the amount of usable data. Next, since the tags and genres are self-reported, they are not consistent across all movies: some refer to actors, others to emotions, adjectives, or directors. This lack of consistency limits the overall accuracy of the recommendations, even though the model remains effective.
+
+We also faced difficulties with the tools we used. Both Plotly and Tkinter were challenging to work with, as we were not familiar with these libraries and had to spend a lot of time learning how to use them in order to implement \textbf{visualisations.py} and \textbf{interface.py}. Finally, from a technical perspective, we initially planned to include a sidebar displaying embedded preview windows for the five IMDb pages corresponding to the recommendations. Unfortunately, we were unable to implement this effectively, so we adapted our approach by making the recommendation titles clickable, allowing users to access the IMDb pages directly.\\
+
+There are several ways we could continue developing and improving this project. One of the main next steps would be to use a larger dataset, such as the full MovieLens dataset, instead of the “latest-small” version we used. It would allow us to test how the system performs when handling much larger amounts of data, and whether the current methods for building the graph and calculating similarities is effective. \\
+Next, make the interface more engaging for users. For example, we could add movie poster images to the recommendations, which would make the results visually appealing. We could also revisit the idea of showing small previews of IMDb pages for each recommendation, using different libraries than Tkinter. \\
+Finally, it would be useful to measure how effective the recommendations really are. This could be done through user testing, where people rate or give feedback on the suggestions they receive, and by comparing our results with the recommendations from existing platforms.\\
+
+To put it in a nutshell, our project successfully created a tool that recommends movies based on a single film, using a graph built from user tags, genres, and ratings. The interface is interactive, allowing users to explore recommendations and see connections between movies. While we faced challenges with data consistency, library limitations, and technical constraints, the system remains effective and provides a useful experience. Looking ahead, there are many opportunities to improve the tool, such as using a larger dataset, adding visual elements like posters, revisiting IMDb previews with advanced tools, and testing the recommendations with real users. \\
+Overall, MovieMatch shows that a recommendation system based on a single movie can work well, be easy to use, and could also be expanded further.
 
 \section*{References}
 
 \color{blue}
-\indent References from topic research: \\
+\indent References for topic research: \\
 
 \color{black}
-“How Netflix's Recommendations System Works.” Netflix Help Center, https://help.netflix.com/en/node/100639. Accessed 5 Mar. 2026. \\
+(1) Netflix. “How Netflix’s Recommendations System Works.” Netflix Help Center. Accessed: Mar. 5, 2026. [Online.] Available: \url{https://help.netflix.com/en/node/100639}. \\
 
-Hutson, Matthew. "How Recommendation Algorithms Work—and Why They May Miss the Mark." Scientific American, https://www.scientificamerican.com/article/how-recommendation-algorithms-work-and-why-they-may-miss-the-mark/. Accessed 5 Mar. 2026. (This link does not seem to work by clicking on it; therefore, copy and paste it in a new tab).\\
+(2) M. Hutson, “How Recommendation Algorithms Work—and Why They May Miss the Mark,” Scientific American, Aug. 17, 2023. [Online]. Available: \\ \url{https://www.scientificamerican.com/article/how-recommendation-algorithms-work-and-why-they-may-miss-the-mark/}.\\
 
-“What Are Recommender Systems?” GeeksforGeeks, https://www.geeksforgeeks.org/machine-learning/what-are-recommender-systems/. Accessed 5 Mar. 2026. (This link does not seem to work by clicking on it; therefore, copy and paste it in a new tab).\\
+(3) GeeksforGeeks. “What Are Recommender Systems?” GeeksforGeeks. Accessed: Mar. 5, 2026. [Online.] Available: \url{https://www.geeksforgeeks.org/machine-learning/what-are-recommender-systems/}.\\
 
 \color{blue}
 Dataset Reference: \\
 
 \color{black}
-Harper, F. Maxwell, and Joseph A. Konstan. "The MovieLens Datasets: History and Context." ACM Transactions on Interactive Intelligent Systems, vol. 5, no. 4, 2015, pp. 19:1–19:19, https://doi.org/10.1145/2827872. \\
+
+(4) F. M. Harper and J. A. Konstan, 2015, “The MovieLens Datasets: History and Context,” GroupLens Research, doi: 10.1145/2827872. \\
 
 \color{blue}
 References for documentation and tutorials regarding Python libraries: \\
 
 \color{black}
-“Graph Objects in Python.” Plotly, https://plotly.com/python/graph-objects/. Accessed 6 Mar. 2026. \\
 
-“Network Graphs in Python.” Plotly, https://plotly.com/python/network-graphs/. Accessed 6 Mar. 2026. \\
+(5) Plotly. “Graph Objects in Python.” Plotly. Accessed: Mar. 20, 2026. [Online.] Available: \\ \url{https://plotly.com/python/graph-objects/}. \\
 
-“Python Plotly Tutorial.” GeeksforGeeks, https://www.geeksforgeeks.org/python/python-plotly-tutorial/. \\ Accessed 6 Mar. 2026. \\
+(6) Plotly. “Network Graphs in Python.” Plotly. Accessed: Mar. 22, 2026. [Online.] Available:\\ \url{https://plotly.com/python/network-graphs/}. \\
 
-“Python Tkinter Tutorial.” GeeksforGeeks, https://www.geeksforgeeks.org/python/python-tkinter-tutorial/. \\ Accessed 6 Mar. 2026. \\
+(7) GeeksforGeeks. “Python Tkinter Tutorial.” GeeksforGeeks. Accessed: Mar. 26, 2026. [Online.] Available: \url{https://www.geeksforgeeks.org/python/python-tkinter-tutorial/}. \\
 
-% NOTE: LaTeX does have a built-in way of generating references automatically,
-% but it's a bit tricky to use so you are allowed to write your references
-% manually using a standard academic format like MLA or IEEE.
-% See project proposal handout for details.
+(8) Y. Os. “Plotly Python Tutorial.” University of Utah. Accessed: Mar. 6, 2026. [Online.] Available: \url{https://users.cs.utah.edu/~yos/2021/02/02/plotly-python.html}.\\
 
 \end{document}
