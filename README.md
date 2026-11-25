@@ -17,6 +17,7 @@ Type a movie you like, pick a minimum rating, and MovieMatch returns the five mo
 ## Features
 
 - **Bridge mode.** Enter your favourite movie and a friend's, and MovieMatch finds the shortest chain of similar movies between them using breadth-first search, then suggests the movie in the middle to watch together.
+- **Movie posters.** Result cards show each film's poster, downloaded from [TMDB](https://www.themoviedb.org/) using the IDs in `links.csv` (optional; see below).
 - **Graph-based recommendations.** Every movie is a vertex. Every pair of sufficiently similar movies is joined by a weighted edge (58,656 edges in total).
 - **Explainable results.** Each recommendation shows what the two movies share (for example *Shared: Animation · Comedy · #pixar*) or notes that the same audience loved both.
 - **Two-hop search.** When the rating filter removes direct neighbours, MovieMatch also searches neighbours of neighbours. It scores them by the product of the two edge weights.
@@ -29,6 +30,7 @@ Type a movie you like, pick a minimum rating, and MovieMatch returns the five mo
 The original version (March 2026) recommended movies for one person. These features were added afterwards, in November 2026:
 
 - **Bridge mode**: find a movie two people will both like (`WeightedGraph.shortest_path`, `find_bridge`)
+- **Movie posters** on the result cards (`posters.py`)
 
 ## How it works
 
@@ -66,6 +68,15 @@ python main.py
 
 Building the graph takes about 5 seconds, then the window opens.
 
+**Optional: movie posters.** Create a free account at [themoviedb.org](https://www.themoviedb.org/), request an API key under *Settings → API*, then run:
+
+```bash
+export TMDB_API_KEY=your_key_here
+python main.py
+```
+
+Without a key, MovieMatch works the same but shows no posters.
+
 ## Running the tests
 
 ```bash
@@ -86,6 +97,7 @@ MovieMatch/
 │   ├── graph.py             # WeightedGraph and the similarity functions
 │   ├── recommender.py       # Top-5 and rating-filtered recommendations (incl. 2-hop search)
 │   ├── interface.py         # Tkinter desktop interface
+│   ├── posters.py           # Downloads posters from the TMDB API
 │   └── visualisations.py    # Interactive Plotly network graph
 ├── tests/                   # pytest suite
 ├── data/                    # MovieLens "ml-latest-small" dataset (see data/README.md)
