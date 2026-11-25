@@ -1,106 +1,88 @@
 # MovieMatch
 
 [![tests](../../actions/workflows/tests.yml/badge.svg)](../../actions/workflows/tests.yml)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Tkinter](https://img.shields.io/badge/UI-Tkinter-informational)
-![Plotly](https://img.shields.io/badge/graphs-Plotly-purple)
 
-**A movie recommender that models 2,269 films as a weighted similarity graph and explains *why* each recommendation was made.**
+Every streaming service has a "because you watched..." row, and it is usually a list of whatever is popular this week. We wanted to build one that could explain itself. MovieMatch treats 2,269 films as a graph: two movies are connected when they share genres, tags, and, most importantly, **the same people loving both of them**.
 
-Type a movie you like, pick a minimum rating, and MovieMatch returns the five most similar films. It ranks them by genres, user tags, and the audience that loved both movies. You can then open an interactive network graph to explore up to 100 related films.
+<!-- screenshot: docs/images/app.png -->
 
-<!-- Take a screenshot of the app (Cmd+Shift+4, then Space, then click the window) and save it as docs/images/app.png -->
-![MovieMatch screenshot](docs/images/app.png)
+## What it does
 
----
+Type a movie you like and MovieMatch gives you five others, each with a short reason (shown here for the top suggestion):
 
-## Features
+| You liked | MovieMatch suggests | Why |
+|---|---|---|
+| Spirited Away | My Neighbor Totoro, Castle in the Sky, Kiki's Delivery Service | Shared: Animation, Fantasy, #anime |
+| The Shawshank Redemption | The Green Mile, The Godfather, American History X | Shared: Crime, Drama, #stephen king |
+| Mean Girls | Ferris Bueller's Day Off, Napoleon Dynamite, Heathers | Shared: Comedy, #high school |
 
-- **Bridge mode.** Enter your favourite movie and a friend's, and MovieMatch finds the shortest chain of similar movies between them using breadth-first search, then suggests the movie in the middle to watch together.
-- **Graph-based recommendations.** Every movie is a vertex. Every pair of sufficiently similar movies is joined by a weighted edge (58,656 edges in total).
-- **Explainable results.** Each recommendation shows what the two movies share (for example *Shared: Animation · Comedy · #pixar*) or notes that the same audience loved both.
-- **Two-hop search.** When the rating filter removes direct neighbours, MovieMatch also searches neighbours of neighbours. It scores them by the product of the two edge weights.
-- **Live autocomplete.** Matching titles appear as you type. Press <kbd>↓</kbd> to move into the list and <kbd>Enter</kbd> to search.
-- **Interactive network view.** A Plotly graph places similar movies closer to the centre and draws stronger links thicker.
-- **Clean title handling.** MovieLens titles like `Matrix, The (1999)` are shown as `The Matrix (1999)`, including titles in other languages.
+**Bridge mode.** Add a friend's favourite too, and MovieMatch walks the graph from your movie to theirs and suggests the film halfway between:
 
-## What's new since the course
+| You like | Your friend likes | Watch together |
+|---|---|---|
+| Toy Story | The Matrix | The Lord of the Rings: The Return of the King |
+| Mean Girls | The Dark Knight | The Godfather |
+| Titanic | Alien | The Sixth Sense |
 
-The original version (March 2026) recommended movies for one person. These features were added afterwards, in November 2026:
-
-- **Bridge mode**: find a movie two people will both like (`WeightedGraph.shortest_path`, `find_bridge`)
+You can also open an interactive map of the 100 movies closest to the one you searched.
 
 ## How it works
 
-```
- movies.csv ─┐
- ratings.csv ─┼─► data_loader ──► Movie objects ──► graph ──► WeightedGraph ──► recommender ──► interface
- tags.csv ───┤     (clean +         (genres, tags,     (pairwise                (top 5, filtered    (Tkinter UI +
- links.csv ──┘      filter)          high raters)       similarity)              by min rating)      Plotly graph)
-```
+Each movie gets a similarity score with every other movie, made of three parts:
 
-Similarity between two movies is a weighted mix of three [Jaccard indices](https://en.wikipedia.org/wiki/Jaccard_index):
-
-| Signal | Weight | Compares |
+| Part | Weight | What is compared |
 |---|---|---|
-| Audience | **50%** | Users who rated **both** movies 4 stars or higher |
-| Tags | **30%** | Free-text tags such as `pixar`, `mind-bending`, `twist ending` |
-| Genres | **20%** | Genres such as Animation, Thriller, Sci-Fi |
+| Audience | 50% | People who rated both movies 4 stars or higher |
+| Tags | 30% | User tags like `pixar`, `mind-bending`, `twist ending` |
+| Genres | 20% | Animation, Thriller, Sci-Fi, ... |
 
-```
-similarity(a, b) = 0.2 · J(genres) + 0.3 · J(tags) + 0.5 · J(high raters)
-```
+Each part is a [Jaccard index](https://en.wikipedia.org/wiki/Jaccard_index): the size of the overlap divided by the size of the combined set. Movies scoring at least 0.2 are connected, which gives 58,656 edges.
 
-Two movies are connected when their similarity is at least **0.2**. Movies with fewer than 10 ratings are left out because they don't have enough data for reliable recommendations.
+Raw scores turned out to be confusing to show. A great match might only score 0.39, which looks like "39%". So the app shows how rare a match is instead: 0.39 is stronger than 99.98% of all 2.5 million movie pairs, so it appears as **Top 0.02%**.
 
-## Getting started
+Bridge mode uses breadth-first search to find the shortest chain of connected movies between two films, and picks the one in the middle. If the two movies are already directly connected, it picks the movie that is most similar to both.
 
-Requires **Python 3.10+**. Tkinter ships with the standard Python installers from python.org.
+## Running it
+
+You need Python 3.10 or newer (Tkinter comes with the standard installer from python.org).
 
 ```bash
-git clone https://github.com/<your-username>/MovieMatch.git
+git clone https://github.com/mavisa1618-droid/MovieMatch.git
 cd MovieMatch
 pip install -r requirements.txt
 python main.py
 ```
 
-Building the graph takes about 5 seconds, then the window opens.
+It takes about 5 seconds to build the graph before the window opens.
 
-## Running the tests
+To run the tests and the linter:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest          # unit tests + doctests
-ruff check .    # linting
+pytest
+ruff check .
 ```
 
-The same checks run automatically on every push through [GitHub Actions](.github/workflows/tests.yml) on Python 3.10, 3.12 and 3.13.
+These also run on GitHub Actions on every push.
 
-## Project structure
+## Code layout
 
 ```
-MovieMatch/
-├── main.py                  # Entry point: load data → build graph → open the app
-├── moviematch/
-│   ├── data_loader.py       # Reads and cleans the MovieLens CSVs into Movie objects
-│   ├── graph.py             # WeightedGraph and the similarity functions
-│   ├── recommender.py       # Top-5 and rating-filtered recommendations (incl. 2-hop search)
-│   ├── interface.py         # Tkinter desktop interface
-│   └── visualisations.py    # Interactive Plotly network graph
-├── tests/                   # pytest suite
-├── data/                    # MovieLens "ml-latest-small" dataset (see data/README.md)
-├── docs/project_report.tex  # Original written project report
-├── pyproject.toml           # Project metadata, pytest and ruff settings
-└── requirements*.txt
+main.py                    loads the data, builds the graph, opens the app
+moviematch/
+    data_loader.py         reads the MovieLens CSV files and cleans up titles
+    graph.py               the weighted graph, similarity scores, shortest path
+    recommender.py         top 5 recommendations, rating filter, bridge mode
+    interface.py           the Tkinter app
+    visualisations.py      the interactive Plotly map
+tests/                     pytest tests
+data/                      MovieLens ml-latest-small dataset
+docs/project_report.tex    our original project report
 ```
 
-## Tech stack
+## Background
 
-Python · Tkinter · Plotly · pytest · ruff · GitHub Actions
-
-## Team
-
-Built as the final project for **CSC111 (Foundations of Computer Science II)** at the University of Toronto, March 2026.
+MovieMatch started as our final project for CSC111 (Foundations of Computer Science II) at the University of Toronto in March 2026. The original team repository is [syaikhafaizaarifin99/Project-2-CSC111](https://github.com/syaikhafaizaarifin99/Project-2-CSC111).
 
 | Name | GitHub |
 |---|---|
@@ -109,12 +91,19 @@ Built as the final project for **CSC111 (Foundations of Computer Science II)** a
 | Capucine Crouzet | [@crouzetc12](https://github.com/crouzetc12) |
 | Tamima Wadageri | [@tamiw10](https://github.com/tamiw10) |
 
-**My contributions:** <!-- TODO: describe your own part, e.g. "Designed the recommendation algorithm and wrote recommender.py and main.py" -->
+**My contributions:** <!-- TODO: describe your own part of the original project -->
 
-The original team repository is [syaikhafaizaarifin99/Project-2-CSC111](https://github.com/syaikhafaizaarifin99/Project-2-CSC111). This fork adds a redesigned interface, a test suite, linting and CI.
+### Updates since the course
 
-## Data and acknowledgements
+After the course ended, I kept working on it in November 2026:
 
-Movie data comes from the [MovieLens](https://grouplens.org/datasets/movielens/) `ml-latest-small` dataset by GroupLens Research. It is used for non-commercial, educational purposes under its [license](data/README.md).
+- added bridge mode
+- replaced the raw similarity percentages with "Top x%" ranks
+- redesigned the interface
+- reorganised the code into a package and added tests, linting and CI
 
-> F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. *ACM Transactions on Interactive Intelligent Systems (TiiS)* 5, 4: 19:1–19:19. https://doi.org/10.1145/2827872
+## Data
+
+Ratings, tags and titles come from the [MovieLens](https://grouplens.org/datasets/movielens/) `ml-latest-small` dataset by GroupLens Research (100,836 ratings from 610 users), used under its [license](data/README.md) for non-commercial purposes.
+
+> F. Maxwell Harper and Joseph A. Konstan. 2015. The MovieLens Datasets: History and Context. ACM Transactions on Interactive Intelligent Systems 5, 4: 19:1-19:19. https://doi.org/10.1145/2827872
