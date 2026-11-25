@@ -248,9 +248,10 @@ def _setup_search(parent: tk.Frame, titles: list[str], on_submit: Callable[[], N
     return search_var
 
 
-def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
+def _setup_rating_filter(controls: tk.Frame, on_change: Callable[[], None]) -> tk.DoubleVar:
     """Build the minimum rating selector as a row of clickable star options.
 
+    Clicking an option calls on_change, so the results update straight away.
     Returns the variable holding the chosen minimum rating (0.0 means "any").
     """
     rating_var = tk.DoubleVar(value=0.0)
@@ -262,13 +263,15 @@ def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
     pills: dict[float, tk.Label] = {}
 
     def select(value: float) -> None:
-        """Mark the chosen rating option as active."""
+        """Mark the chosen rating option as active and update the results."""
         rating_var.set(value)
         for option, pill in pills.items():
             active = option == value
             pill.configure(bg=RED if active else FIELD, fg=TEXT if active else MUTED)
+        on_change()
 
-    for value in (0.0, 3.0, 3.5, 4.0, 4.5):
+    # only 3 movies average 4.5 or more, so the options stop at 4.0
+    for value in (0.0, 3.5, 4.0):
         text = 'Any' if value == 0.0 else f'★ {value}+'
         pill = tk.Label(box, text=text, bg=FIELD, fg=MUTED, font=(FONT, 11, 'bold'),
                         padx=10, pady=6, cursor='hand2')
@@ -276,7 +279,8 @@ def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
         pill.bind('<Button-1>', lambda _e, v=value: select(v))
         pills[value] = pill
 
-    select(0.0)
+    rating_var.set(0.0)
+    pills[0.0].configure(bg=RED, fg=TEXT)
     return rating_var
 
 
@@ -489,7 +493,12 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
 
     controls = tk.Frame(window, bg=BG)
     controls.pack(fill='x', padx=32, pady=(12, 0))
-    rating_var = _setup_rating_filter(controls)
+    def on_rating_change() -> None:
+        """Search again with the new minimum rating, if something has been typed."""
+        if search_var.get().strip():
+            on_search()
+
+    rating_var = _setup_rating_filter(controls, on_rating_change)
     _make_button(controls, 'Find something to watch', on_search).pack(side='right', padx=(10, 0))
     graph_button = _make_button(controls, 'View graph ↗', open_graph, primary=False)
 
