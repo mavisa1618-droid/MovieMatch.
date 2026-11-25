@@ -27,7 +27,6 @@ from collections.abc import Callable
 
 from moviematch.data_loader import Movie
 from moviematch.graph import WeightedGraph
-from moviematch.posters import get_poster
 from moviematch.recommender import find_bridge, recommend_with_min_rating, title_to_id
 from moviematch.visualisations import build_graph_figure
 
@@ -297,27 +296,6 @@ def _draw_match_bar(parent: tk.Widget, score: float, width: int = 150) -> tk.Can
     return canvas
 
 
-def _poster_image(movie: Movie, height: int = 64) -> tk.PhotoImage | None:
-    """Return the movie's poster resized to the given height, or None if there isn't one.
-
-    Tkinter can't open JPEG files by itself, so this uses Pillow. If Pillow is
-    not installed, cards are shown without posters.
-    """
-    poster_bytes = get_poster(movie)
-    if poster_bytes is None:
-        return None
-    try:
-        from io import BytesIO
-
-        from PIL import Image, ImageTk
-    except ImportError:
-        return None
-
-    image = Image.open(BytesIO(poster_bytes))
-    width = round(image.width * height / image.height)
-    return ImageTk.PhotoImage(image.resize((width, height)))
-
-
 def _build_result_card(parent: tk.Frame, rank: int, movie: Movie, score: float,
                        searched: Movie) -> None:
     """Add one recommendation card to parent."""
@@ -326,12 +304,6 @@ def _build_result_card(parent: tk.Frame, rank: int, movie: Movie, score: float,
 
     tk.Label(card, text=f'{rank:02d}', bg=CARD, fg=PURPLE_DARK,
              font=(FONT, 24, 'bold'), width=3).pack(side='left', padx=(10, 4), pady=8)
-
-    poster = _poster_image(movie)
-    if poster is not None:
-        poster_label = tk.Label(card, image=poster, bg=CARD)
-        poster_label.image = poster  # keep a reference, or Tkinter deletes the image
-        poster_label.pack(side='left', padx=(0, 12), pady=6)
 
     middle = tk.Frame(card, bg=CARD)
     middle.pack(side='left', fill='x', expand=True, pady=8)
@@ -510,8 +482,7 @@ if __name__ == '__main__':
     python_ta.check_all(config={
         'extra-imports': [
             'os', 'tempfile', 'webbrowser', 'tkinter',
-            'moviematch.data_loader', 'moviematch.graph', 'moviematch.posters', 'moviematch.recommender',
-            'moviematch.visualisations', 'io', 'PIL'
+            'moviematch.data_loader', 'moviematch.graph', 'moviematch.recommender', 'moviematch.visualisations'
         ],
         'allowed-io': ['on_search'],
         'max-line-length': 120,

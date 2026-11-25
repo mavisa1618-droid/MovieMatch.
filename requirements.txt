@@ -1,3 +1,2 @@
 # Runtime dependencies (Tkinter ships with Python)
 plotly>=5.0
-pillow>=10.0  # shows movie posters (optional)

@@ -39,7 +39,3 @@ def test_loaded_movies_have_imdb_links(movies) -> None:
     toy_story = movies[1]
     assert toy_story.title == 'Toy Story (1995)'
     assert toy_story.imdb_id == '0114709'
-
-
-def test_loaded_movies_have_tmdb_ids(movies) -> None:
-    assert movies[1].tmdb_id == '862'
