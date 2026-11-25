@@ -16,12 +16,19 @@ Type a movie you like, pick a minimum rating, and MovieMatch returns the five mo
 
 ## Features
 
+- **Bridge mode.** Enter your favourite movie and a friend's, and MovieMatch finds the shortest chain of similar movies between them using breadth-first search, then suggests the movie in the middle to watch together.
 - **Graph-based recommendations.** Every movie is a vertex. Every pair of sufficiently similar movies is joined by a weighted edge (58,656 edges in total).
 - **Explainable results.** Each recommendation shows what the two movies share (for example *Shared: Animation · Comedy · #pixar*) or notes that the same audience loved both.
 - **Two-hop search.** When the rating filter removes direct neighbours, MovieMatch also searches neighbours of neighbours. It scores them by the product of the two edge weights.
 - **Live autocomplete.** Matching titles appear as you type. Press <kbd>↓</kbd> to move into the list and <kbd>Enter</kbd> to search.
 - **Interactive network view.** A Plotly graph places similar movies closer to the centre and draws stronger links thicker.
 - **Clean title handling.** MovieLens titles like `Matrix, The (1999)` are shown as `The Matrix (1999)`, including titles in other languages.
+
+## What's new since the course
+
+The original version (March 2026) recommended movies for one person. These features were added afterwards, in November 2026:
+
+- **Bridge mode**: find a movie two people will both like (`WeightedGraph.shortest_path`, `find_bridge`)
 
 ## How it works
 

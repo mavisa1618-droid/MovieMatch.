@@ -64,3 +64,38 @@ class TestWeightedGraph:
     def test_most_similar_movie_ranked_first(self, small_graph) -> None:
         best_match, _ = small_graph.get_neighbours(1)[0]
         assert best_match.title == 'Toy Story 2 (1999)'
+
+
+class TestShortestPath:
+    def _chain_graph(self) -> WeightedGraph:
+        """A -- B -- C -- D, plus a weak shortcut-free side branch B -- E."""
+        graph = WeightedGraph()
+        for i, name in enumerate('ABCDE', start=1):
+            graph.add_vertex(make_movie(i, f'{name} (2000)'))
+        graph.add_edge(1, 2, 0.5)
+        graph.add_edge(2, 3, 0.5)
+        graph.add_edge(3, 4, 0.5)
+        graph.add_edge(2, 5, 0.3)
+        return graph
+
+    def test_path_includes_both_ends(self) -> None:
+        path = self._chain_graph().shortest_path(1, 4)
+        assert [m.title[0] for m in path] == ['A', 'B', 'C', 'D']
+
+    def test_path_to_itself(self) -> None:
+        assert [m.movie_id for m in self._chain_graph().shortest_path(3, 3)] == [3]
+
+    def test_no_path_returns_empty_list(self, small_graph) -> None:
+        # Alien is not connected to the Pixar films
+        assert small_graph.shortest_path(1, 4) == []
+
+    def test_prefers_stronger_edges_on_ties(self) -> None:
+        graph = WeightedGraph()
+        for i in range(1, 5):
+            graph.add_vertex(make_movie(i, f'M{i} (2000)'))
+        # two paths of length 2 from 1 to 4: through 2 (weak) or through 3 (strong)
+        graph.add_edge(1, 2, 0.2)
+        graph.add_edge(2, 4, 0.2)
+        graph.add_edge(1, 3, 0.9)
+        graph.add_edge(3, 4, 0.9)
+        assert [m.movie_id for m in graph.shortest_path(1, 4)] == [1, 3, 4]

@@ -114,6 +114,45 @@ def recommend_with_min_rating(title: str, graph: WeightedGraph,
     return qualifying[:5]
 
 
+def find_bridge(title1: str, title2: str, graph: WeightedGraph,
+                movies: dict[int, Movie]) -> list[Movie]:
+    """Return the chain of movies that connects title1 to title2 in the graph.
+
+    The returned list starts with title1 and ends with title2. The movies in
+    between are the "bridge" between the two tastes.
+
+    If the two movies are directly connected, there is nothing in between, so the
+    best movie that is similar to BOTH of them is put in the middle instead
+    (if there is one). Returns an empty list if a title is not found or the
+    movies are not connected at all.
+
+    Preconditions:
+        - len(movies) > 0
+    """
+    title_map = title_to_id(movies)
+    if title1 not in title_map or title2 not in title_map or title1 == title2:
+        return []
+
+    id1 = title_map[title1]
+    id2 = title_map[title2]
+    path = graph.shortest_path(id1, id2)
+
+    if len(path) == 2:
+        scores1 = {movie.movie_id: score for movie, score in graph.get_neighbours(id1)}
+        best_movie = None
+        best_score = 0.0
+        for movie, score in graph.get_neighbours(id2):
+            if movie.movie_id in scores1 and movie.movie_id != id1:
+                combined = min(score, scores1[movie.movie_id])
+                if combined > best_score:
+                    best_movie = movie
+                    best_score = combined
+        if best_movie is not None:
+            path = [path[0], best_movie, path[1]]
+
+    return path
+
+
 if __name__ == '__main__':
     import doctest
 

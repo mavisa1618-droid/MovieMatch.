@@ -27,7 +27,7 @@ from collections.abc import Callable
 
 from moviematch.data_loader import Movie
 from moviematch.graph import WeightedGraph
-from moviematch.recommender import recommend_with_min_rating, title_to_id
+from moviematch.recommender import find_bridge, recommend_with_min_rating, title_to_id
 from moviematch.visualisations import build_graph_figure
 
 # Colour palette (shared with the Plotly graph in visualisations.py)
@@ -148,20 +148,19 @@ def _setup_header(window: tk.Tk, movie_count: int, edge_count: int) -> None:
         tk.Label(chip, text=label, bg=CARD, fg=MUTED, font=(FONT, 11)).pack(side='left', padx=(0, 12))
 
 
-def _setup_search(window: tk.Tk, titles: list[str],
-                  on_submit: Callable[[], None]) -> tuple[tk.StringVar, tk.Frame]:
-    """Build the search bar with an autocomplete dropdown.
+def _setup_search(parent: tk.Frame, titles: list[str], on_submit: Callable[[], None],
+                  heading: str, start_focused: bool = False) -> tk.StringVar:
+    """Build a search bar with an autocomplete dropdown inside parent.
 
     As the user types, up to MAX_SUGGESTIONS matching titles appear below the bar.
     Clicking a suggestion (or pressing Down then Enter) fills the search bar.
     Pressing Enter in the search bar calls on_submit.
 
-    Returns the search variable and the frame holding the controls row
-    (so the rating filter and buttons can be placed next to it).
+    Returns the search variable (to read what was typed).
     """
-    section = tk.Frame(window, bg=BG)
-    section.pack(fill='x', padx=32, pady=(16, 0))
-    _section_label(section, 'SEARCH FOR A MOVIE YOU LIKE').pack(anchor='w', pady=(0, 6))
+    section = tk.Frame(parent, bg=BG)
+    section.pack(side='left', fill='x', expand=True, anchor='n', padx=(0, 12))
+    _section_label(section, heading).pack(anchor='w', pady=(0, 6))
 
     search_var = tk.StringVar()
     entry_border = tk.Frame(section, bg=BORDER)
@@ -170,15 +169,13 @@ def _setup_search(window: tk.Tk, titles: list[str],
                      font=(FONT, 15), insertbackground=TEXT, relief='flat',
                      highlightthickness=0)
     entry.pack(fill='x', padx=1, pady=1, ipady=10, ipadx=10)
-    entry.focus_set()
+    if start_focused:
+        entry.focus_set()
 
     dropdown = tk.Listbox(section, bg=CARD, fg=TEXT, selectbackground=PURPLE_DARK,
                           selectforeground=TEXT, font=(FONT, 13), height=MAX_SUGGESTIONS,
                           relief='flat', highlightthickness=1, highlightbackground=BORDER,
                           activestyle='none')
-
-    controls = tk.Frame(section, bg=BG)
-    controls.pack(fill='x', pady=(12, 0))
 
     def on_focus(focused: bool) -> None:
         """Highlight the search bar border while it has focus."""
@@ -208,7 +205,7 @@ def _setup_search(window: tk.Tk, titles: list[str],
         for match in matches:
             dropdown.insert(tk.END, '  ' + match)
         dropdown.configure(height=len(matches))
-        dropdown.pack(fill='x', before=controls)
+        dropdown.pack(fill='x')
 
     def choose(index: int) -> None:
         """Fill the search bar with the suggestion at index."""
@@ -255,7 +252,7 @@ def _setup_search(window: tk.Tk, titles: list[str],
     dropdown.bind('<Return>', on_dropdown_enter)
     dropdown.bind('<Escape>', lambda _e: (hide_dropdown(), entry.focus_set()))
 
-    return search_var, controls
+    return search_var
 
 
 def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
@@ -393,6 +390,19 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
             return
 
         search_var.set(title)
+
+        # if a friend's movie was also typed, switch to bridge mode
+        friend_typed = friend_var.get().strip()
+        if friend_typed:
+            friend_title = lowered_to_title.get(friend_typed.lower())
+            if friend_title is None:
+                status.configure(text="Your friend's movie was not found. Pick it from the suggestions.", fg=WARN)
+                graph_button.pack_forget()
+                return
+            friend_var.set(friend_title)
+            on_bridge(title, friend_title)
+            return
+
         searched = movies[title_map[title]]
         min_rating = rating_var.get()
         recommendations = recommend_with_min_rating(title, graph, movies, min_rating)
@@ -412,17 +422,45 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
         state['graph_ready'] = True
         graph_button.pack(side='right')
 
+    def on_bridge(title1: str, title2: str) -> None:
+        """Show the chain of movies that connects two people's favourite movies."""
+        graph_button.pack_forget()
+        path = find_bridge(title1, title2, graph, movies)
+
+        if len(path) < 3:
+            status.configure(text="Couldn't find a movie between these two. Try two different movies.", fg=WARN)
+            return
+
+        middle = len(path) // 2
+        status.configure(text=f'Watch together: {path[middle].title}', fg=TEXT)
+
+        # one card per step, explaining how each movie links to the one before it
+        for step in range(1, len(path)):
+            previous = path[step - 1]
+            movie = path[step]
+            score = 0.0
+            for neighbour, neighbour_score in graph.get_neighbours(previous.movie_id):
+                if neighbour.movie_id == movie.movie_id:
+                    score = neighbour_score
+            _build_result_card(results, step, movie, score, previous)
+
     def open_graph() -> None:
         """Open the network graph for the latest search in the web browser."""
         if state['graph_ready']:
             webbrowser.open('file://' + graph_path)
 
-    search_var, controls = _setup_search(window, titles, on_search)
+    search_row = tk.Frame(window, bg=BG)
+    search_row.pack(fill='x', padx=(32, 20), pady=(16, 0))
+    search_var = _setup_search(search_row, titles, on_search, 'A MOVIE YOU LIKE', start_focused=True)
+    friend_var = _setup_search(search_row, titles, on_search, "A FRIEND'S FAVOURITE (OPTIONAL)")
+
+    controls = tk.Frame(window, bg=BG)
+    controls.pack(fill='x', padx=32, pady=(12, 0))
     rating_var = _setup_rating_filter(controls)
     _make_button(controls, 'Find matches', on_search).pack(side='right', padx=(10, 0))
     graph_button = _make_button(controls, 'View graph ↗', open_graph, primary=False)
 
-    status = tk.Label(window, text='Try "Toy Story", "Inception" or "Spirited Away" to get started.',
+    status = tk.Label(window, text='Try "Toy Story", or add a friend\'s favourite to find a movie you both like.',
                       bg=BG, fg=MUTED, font=(FONT, 14, 'bold'), anchor='w')
     status.pack(fill='x', padx=32, pady=(16, 4))
 

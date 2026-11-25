@@ -82,6 +82,42 @@ class WeightedGraph:
         ]
         return sorted(neighbours, key=lambda x: x[1], reverse=True)
 
+    def shortest_path(self, start_id: int, end_id: int) -> list[Movie]:
+        """Return the movies on a shortest path from start_id to end_id, including both ends.
+
+        "Shortest" means the fewest edges. This uses breadth-first search, and checks
+        stronger edges first so that ties are broken in favour of more similar movies.
+        Returns an empty list if there is no path between the two movies.
+
+        Preconditions:
+            - start_id in self._vertices
+            - end_id in self._vertices
+        """
+        # came_from maps each visited movie_id to the movie_id we reached it from
+        came_from = {start_id: None}
+        queue = [start_id]
+
+        while queue:
+            current_id = queue.pop(0)
+            if current_id == end_id:
+                break
+            for neighbour, _ in self.get_neighbours(current_id):
+                if neighbour.movie_id not in came_from:
+                    came_from[neighbour.movie_id] = current_id
+                    queue.append(neighbour.movie_id)
+
+        if end_id not in came_from:
+            return []
+
+        # walk backwards from the end to rebuild the path
+        path = []
+        current = end_id
+        while current is not None:
+            path.append(self._vertices[current].movie)
+            current = came_from[current]
+        path.reverse()
+        return path
+
 
 def overlap_similarity(set1: set, set2: set) -> float:
     """Return the proportion of shared elements between two sets out of all
