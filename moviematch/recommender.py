@@ -7,6 +7,8 @@ Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
 from __future__ import annotations
 
+import bisect
+
 from moviematch.data_loader import Movie
 from moviematch.graph import WeightedGraph
 
@@ -153,6 +155,30 @@ def find_bridge(title1: str, title2: str, graph: WeightedGraph,
     return path
 
 
+def top_percent(score: float, sorted_scores: list[float], total_pairs: int) -> float:
+    """Return the percentage of all movie pairs that are at least as similar as score.
+
+    Similarity scores are naturally small (two movies rarely share most of their
+    tags and fans), so a raw score like 0.39 sounds low even though it is one of the
+    strongest matches in the whole dataset. This turns the score into a rank instead:
+    a result of 0.5 means "this pair is in the top 0.5% of all pairs".
+
+    sorted_scores holds every edge score in the graph (lowest first). Pairs that
+    are not connected have a score below the edge threshold, so they never count.
+
+    Preconditions:
+        - total_pairs > 0
+        - sorted_scores == sorted(sorted_scores)
+
+    >>> top_percent(0.5, [0.2, 0.3, 0.5, 0.6], 100)
+    2.0
+    >>> top_percent(0.9, [0.2, 0.3, 0.5, 0.6], 100)
+    0.0
+    """
+    at_least_as_similar = len(sorted_scores) - bisect.bisect_left(sorted_scores, score)
+    return 100 * at_least_as_similar / total_pairs
+
+
 if __name__ == '__main__':
     import doctest
 
@@ -161,6 +187,6 @@ if __name__ == '__main__':
     import python_ta
 
     python_ta.check_all(config={
-        'extra-imports': ['moviematch.data_loader', 'moviematch.graph'],
+        'extra-imports': ['bisect', 'moviematch.data_loader', 'moviematch.graph'],
         'max-line-length': 120,
     })

@@ -1,7 +1,7 @@
 """Tests for moviematch.recommender."""
 from __future__ import annotations
 
-from moviematch.recommender import find_bridge, recommend, recommend_with_min_rating, title_to_id
+from moviematch.recommender import find_bridge, recommend, recommend_with_min_rating, title_to_id, top_percent
 
 
 def test_title_to_id(small_catalogue) -> None:
@@ -42,3 +42,8 @@ def test_find_bridge_not_connected(small_catalogue, small_graph) -> None:
 def test_find_bridge_unknown_or_same_title(small_catalogue, small_graph) -> None:
     assert find_bridge('Toy Story (1995)', 'Nope (2099)', small_graph, small_catalogue) == []
     assert find_bridge('Toy Story (1995)', 'Toy Story (1995)', small_graph, small_catalogue) == []
+
+
+def test_top_percent_stronger_match_has_smaller_percent() -> None:
+    scores = [0.2, 0.25, 0.3, 0.4, 0.5]
+    assert top_percent(0.5, scores, 1000) < top_percent(0.2, scores, 1000)

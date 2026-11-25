@@ -82,6 +82,18 @@ class WeightedGraph:
         ]
         return sorted(neighbours, key=lambda x: x[1], reverse=True)
 
+    def all_scores(self) -> list[float]:
+        """Return the similarity score of every edge in this graph, sorted from lowest to highest.
+
+        Each edge is only counted once, even though it is stored in both vertices.
+        """
+        scores = []
+        for movie_id, vertex in self._vertices.items():
+            for neighbour, score in vertex.neighbours.items():
+                if neighbour.movie.movie_id > movie_id:
+                    scores.append(score)
+        return sorted(scores)
+
     def shortest_path(self, start_id: int, end_id: int) -> list[Movie]:
         """Return the movies on a shortest path from start_id to end_id, including both ends.
 

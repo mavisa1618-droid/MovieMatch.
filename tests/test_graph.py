@@ -99,3 +99,10 @@ class TestShortestPath:
         graph.add_edge(1, 3, 0.9)
         graph.add_edge(3, 4, 0.9)
         assert [m.movie_id for m in graph.shortest_path(1, 4)] == [1, 3, 4]
+
+
+def test_all_scores_counts_each_edge_once(small_graph) -> None:
+    scores = small_graph.all_scores()
+    assert scores == sorted(scores)
+    total_neighbours = sum(len(small_graph.get_neighbours(i)) for i in range(1, 5))
+    assert len(scores) == total_neighbours // 2
