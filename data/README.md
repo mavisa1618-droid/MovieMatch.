@@ -1,3 +1,7 @@
+# MovieLens dataset (ml-latest-small)
+
+> This folder holds the dataset MovieMatch is built on. It is distributed unchanged from [GroupLens](https://grouplens.org/datasets/movielens/) under the license below. MovieMatch loads it in `moviematch/data_loader.py`. See the [project README](../README.md) for the project itself.
+
 Summary
 =======
 

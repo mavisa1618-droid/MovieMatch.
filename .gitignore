@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tools
+.pytest_cache/
+.ruff_cache/
+
+# Generated graph from older versions of the app
+temp_graph.html
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

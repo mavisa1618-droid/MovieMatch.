@@ -5,9 +5,9 @@ It loads the data and builds the graph and the interface.
 
 Copyright (c) 2026 <Capucine, Mavi, Syaikha, Tamima>
 """
-from data_loader import load_data
-from graph import build_from_movies
-from interface import run_app
+from moviematch.data_loader import load_data
+from moviematch.graph import build_from_movies
+from moviematch.interface import run_app
 
 if __name__ == '__main__':
     print('Loading data...')

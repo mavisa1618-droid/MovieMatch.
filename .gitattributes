@@ -1,0 +1,4 @@
+# Use Unix line endings for code and docs
+* text=auto eol=lf
+# Keep the MovieLens data files exactly as distributed
+*.csv -text
