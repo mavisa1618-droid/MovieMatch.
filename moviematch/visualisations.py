@@ -82,10 +82,10 @@ def _build_edge_traces(hundred_movies: list[tuple[Movie, float]],
         x, y = positions[i]
 
         if movie.movie_id in top5_ids:
-            color = '#60A5FA'
+            color = '#e9a23b'
             width = (score ** 2) * 12
         else:
-            color = '#1e1e35'
+            color = '#3d3128'
             width = max(0.3, score * 3)  # so line doesn't dissapear
 
         edge_traces.append(go.Scatter(
@@ -104,17 +104,16 @@ def _build_top5_trace(hundred_movies: list[tuple[Movie, float]],
                       positions: list[tuple[float, float]]) -> go.Scatter:
     """Return the trace for top 5 nodes, always show labels instead of hover.
 
-         - (f'{movie.title}<br>★ {movie.avg_rating}<br>{round(score * 100)}%') so that
+         - (f'{movie.title}<br>★ {movie.avg_rating}') so that
          label shows, for instance:
                 Toy Story 2 (1999)
                 ★ 3.86
-                51%
          - (+10) for node_size so that no node is too small to see.
     """
 
     node_x, node_y, node_text, node_size = [], [], [], []
 
-    for i, (movie, score) in enumerate(hundred_movies):
+    for i, (movie, _) in enumerate(hundred_movies):
         if movie.movie_id not in top5_ids:
             continue
 
@@ -122,7 +121,7 @@ def _build_top5_trace(hundred_movies: list[tuple[Movie, float]],
         node_x.append(x)
         node_y.append(y)
 
-        node_text.append(f'{movie.title}<br>★ {movie.avg_rating}<br>{round(score * 100)}%')
+        node_text.append(f'{movie.title}<br>★ {movie.avg_rating}')
         node_size.append((movie.avg_rating ** 2) * 5 + 10)
 
     return go.Scatter(
@@ -130,9 +129,9 @@ def _build_top5_trace(hundred_movies: list[tuple[Movie, float]],
         mode='markers+text',
         text=node_text,
         textposition='middle center',
-        textfont={'color': 'white', 'size': 9},
-        marker={'size': node_size, 'color': '#12121f',
-                'line': {'width': 2.5, 'color': '#4F46E5'}},
+        textfont={'color': '#f3e9d7', 'size': 9},
+        marker={'size': node_size, 'color': '#211a15',
+                'line': {'width': 2.5, 'color': '#b3322b'}},
         hoverinfo='none',
         showlegend=False
     )
@@ -143,15 +142,14 @@ def _build_other_trace(hundred_movies: list[tuple[Movie, float]],
                        positions: list[tuple[float, float]]) -> go.Scatter:
     """Return the trace for non-top-5 nodes, shows label on hover only.
         - hoverinfo='text': so that label appears when cursor is on node.
-        - (f'{movie.title}<br>★ {movie.avg_rating}<br>{round(score * 100)}%') so that
+        - (f'{movie.title}<br>★ {movie.avg_rating}') so that
         label shows, for instance:
                 Toy Story 2 (1999)
                 ★ 3.86
-                51%
         - (+5) for node_size so that no node is too small to see.
                 """
     node_x, node_y, hover_text, node_size = [], [], [], []
-    for i, (movie, score) in enumerate(hundred_movies):
+    for i, (movie, _) in enumerate(hundred_movies):
         if movie.movie_id in top5_ids:
             continue
 
@@ -159,18 +157,18 @@ def _build_other_trace(hundred_movies: list[tuple[Movie, float]],
         node_x.append(x)
         node_y.append(y)
 
-        hover_text.append(f'{movie.title}<br>★ {movie.avg_rating}<br>{round(score * 100)}%')
+        hover_text.append(f'{movie.title}<br>★ {movie.avg_rating}')
         node_size.append((movie.avg_rating ** 2) * 3 + 5)
 
     return go.Scatter(
         x=node_x, y=node_y,
         mode='markers',
-        marker={'size': node_size, 'color': '#12121f',
-                'line': {'width': 1.0, 'color': '#2a2a4a'}},
+        marker={'size': node_size, 'color': '#211a15',
+                'line': {'width': 1.0, 'color': '#5a4a3c'}},
         hovertext=hover_text,
         hoverinfo='text',
-        hoverlabel={'bgcolor': '#12121f', 'font': {'color': 'white', 'size': 11},
-                    'bordercolor': '#4F46E5'},
+        hoverlabel={'bgcolor': '#211a15', 'font': {'color': '#f3e9d7', 'size': 11},
+                    'bordercolor': '#b3322b'},
         showlegend=False
     )
 
@@ -184,10 +182,10 @@ def _build_input_trace(input_movie: Movie) -> go.Scatter:
         mode='markers+text',
         text=[f'{input_movie.title}<br>★ {input_movie.avg_rating}'],
         textposition='middle center',
-        textfont={'color': '#A78BFA', 'size': 10},
+        textfont={'color': '#e9a23b', 'size': 10},
         marker={'size': [(input_movie.avg_rating ** 2) * 6 + 20],
-                'color': '#12121f',
-                'line': {'width': 3.0, 'color': '#A78BFA'}},
+                'color': '#211a15',
+                'line': {'width': 3.0, 'color': '#e9a23b'}},
         hoverinfo='none',
         showlegend=False
     )
@@ -220,8 +218,8 @@ def build_graph_figure(input_movie: Movie,
 
     fig = go.Figure(data=edge_traces + [other_trace, top5_trace, input_trace])
     fig.update_layout(
-        paper_bgcolor='#0a0a12',
-        plot_bgcolor='#0a0a12',
+        paper_bgcolor='#15110e',
+        plot_bgcolor='#15110e',
         showlegend=False,
         xaxis={'showgrid': False, 'zeroline': False, 'showticklabels': False,
                'range': [-2.0, 2.0]},

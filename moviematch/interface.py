@@ -3,11 +3,11 @@
 This module builds the MovieMatch desktop application using Tkinter.
 
 Users type a movie title into the search bar (with live autocomplete),
-choose a minimum average rating, and press Enter or click "Find matches"
-to get up to 5 recommendations. Each recommendation is shown as a card with:
+choose a minimum average rating, and press Enter or click "Find something to watch"
+to get up to 5 recommendations. Each recommendation is shown as a ticket-style card with:
     - its rank, title, and genres
-    - its average rating and number of ratings
-    - a bar showing how similar it is to the searched movie
+    - how rare the match is (for example "Top 0.4%" of all movie pairs)
+    - its average rating
     - a short "why" line listing the genres and tags both movies share
     - a link that opens the movie's IMDb page in the web browser
 
@@ -27,24 +27,25 @@ from collections.abc import Callable
 
 from moviematch.data_loader import Movie
 from moviematch.graph import WeightedGraph
-from moviematch.recommender import find_bridge, recommend_with_min_rating, title_to_id
+from moviematch.recommender import find_bridge, recommend_with_min_rating, title_to_id, top_percent
 from moviematch.visualisations import build_graph_figure
 
-# Colour palette (shared with the Plotly graph in visualisations.py)
-BG = '#0a0a12'
-CARD = '#12121f'
-CARD_HOVER = '#191930'
-FIELD = '#181828'
-BORDER = '#25254a'
-PURPLE = '#A78BFA'
-PURPLE_DARK = '#4F46E5'
-BLUE = '#60A5FA'
-TEXT = '#ffffff'
-MUTED = '#8b8ba7'
-GOLD = '#FBBF24'
-WARN = '#F87171'
+# Colours: a dark "movie theatre" palette (also used in visualisations.py)
+BG = '#15110e'          # background, like a dark cinema
+CARD = '#211a15'        # result cards
+CARD_HOVER = '#2b221b'
+FIELD = '#2a211a'       # search boxes
+BORDER = '#3d3128'
+RED = '#b3322b'         # cinema seat red, used for buttons and ticket stubs
+RED_LIGHT = '#cf4038'
+AMBER = '#e9a23b'       # marquee light amber, used for highlights
+TEXT = '#f3e9d7'        # warm cream instead of plain white
+MUTED = '#a39280'
+WARN = '#e2725b'
 
-FONT = 'Helvetica'
+FONT = 'Helvetica'      # normal text
+TITLE_FONT = 'Georgia'  # headings, gives a classic movie poster feel
+MONO_FONT = 'Courier'   # ticket numbers and small labels
 MAX_SUGGESTIONS = 8
 
 
@@ -92,8 +93,8 @@ def _make_button(parent: tk.Widget, text: str, command: Callable[[], None],
 
     A Label is used instead of tk.Button because macOS ignores button colours.
     """
-    normal = PURPLE_DARK if primary else FIELD
-    hover = PURPLE if primary else CARD_HOVER
+    normal = RED if primary else FIELD
+    hover = RED_LIGHT if primary else CARD_HOVER
     button = tk.Label(parent, text=text, bg=normal, fg=TEXT,
                       font=(FONT, 12, 'bold'), cursor='hand2', padx=18, pady=9)
     button.bind('<Button-1>', lambda _e: command())
@@ -104,7 +105,7 @@ def _make_button(parent: tk.Widget, text: str, command: Callable[[], None],
 
 def _section_label(parent: tk.Widget, text: str) -> tk.Label:
     """Return a small uppercase section heading."""
-    return tk.Label(parent, text=text, bg=BG, fg=PURPLE, font=(FONT, 10, 'bold'))
+    return tk.Label(parent, text=text, bg=BG, fg=AMBER, font=(MONO_FONT, 12, 'bold'))
 
 
 # Window sections
@@ -121,31 +122,23 @@ def _setup_window() -> tk.Tk:
 
 
 def _setup_header(window: tk.Tk, movie_count: int, edge_count: int) -> None:
-    """Build the title, tagline, and dataset statistics at the top of the window."""
+    """Build the title, tagline, and a line of dataset numbers at the top of the window."""
     header = tk.Frame(window, bg=BG)
-    header.pack(fill='x', padx=32, pady=(18, 0))
+    header.pack(fill='x', padx=32, pady=(14, 0))
 
     top_row = tk.Frame(header, bg=BG)
     top_row.pack(fill='x')
-    title_row = tk.Frame(top_row, bg=BG)
-    title_row.pack(side='left')
-    tk.Label(title_row, text='Movie', bg=BG, fg=TEXT,
-             font=(FONT, 32, 'bold')).pack(side='left')
-    tk.Label(title_row, text='Match', bg=BG, fg=PURPLE,
-             font=(FONT, 32, 'bold')).pack(side='left')
+    tk.Label(top_row, text='MovieMatch', bg=BG, fg=TEXT,
+             font=(TITLE_FONT, 34, 'bold italic')).pack(side='left')
+    numbers = f'{movie_count:,} FILMS  ·  {edge_count:,} CONNECTIONS  ·  100,836 RATINGS'
+    tk.Label(top_row, text=numbers, bg=BG, fg=MUTED,
+             font=(MONO_FONT, 11)).pack(side='right', anchor='s', pady=(0, 8))
 
-    tk.Label(header, text='Find your next favourite film through a graph of what people actually love.',
-             bg=BG, fg=MUTED, font=(FONT, 13)).pack(anchor='w', pady=(2, 0))
+    tk.Label(header, text="Tell us a film you love, and we'll find what to watch next.",
+             bg=BG, fg=MUTED, font=(TITLE_FONT, 14, 'italic')).pack(anchor='w')
 
-    stats = tk.Frame(top_row, bg=BG)
-    stats.pack(side='right')
-    for value, label in ((f'{movie_count:,}', 'movies'),
-                         (f'{edge_count:,}', 'connections'),
-                         ('100k+', 'ratings analysed')):
-        chip = tk.Frame(stats, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
-        chip.pack(side='left', padx=(10, 0))
-        tk.Label(chip, text=value, bg=CARD, fg=BLUE, font=(FONT, 12, 'bold')).pack(side='left', padx=(12, 4), pady=6)
-        tk.Label(chip, text=label, bg=CARD, fg=MUTED, font=(FONT, 11)).pack(side='left', padx=(0, 12))
+    # a thin amber line under the header, like a marquee
+    tk.Frame(header, bg=AMBER, height=2).pack(fill='x', pady=(10, 0))
 
 
 def _setup_search(parent: tk.Frame, titles: list[str], on_submit: Callable[[], None],
@@ -172,14 +165,14 @@ def _setup_search(parent: tk.Frame, titles: list[str], on_submit: Callable[[], N
     if start_focused:
         entry.focus_set()
 
-    dropdown = tk.Listbox(section, bg=CARD, fg=TEXT, selectbackground=PURPLE_DARK,
+    dropdown = tk.Listbox(section, bg=CARD, fg=TEXT, selectbackground=RED,
                           selectforeground=TEXT, font=(FONT, 13), height=MAX_SUGGESTIONS,
                           relief='flat', highlightthickness=1, highlightbackground=BORDER,
                           activestyle='none')
 
     def on_focus(focused: bool) -> None:
         """Highlight the search bar border while it has focus."""
-        entry_border.configure(bg=PURPLE if focused else BORDER)
+        entry_border.configure(bg=AMBER if focused else BORDER)
 
     def hide_dropdown() -> None:
         """Hide the suggestion list."""
@@ -263,8 +256,8 @@ def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
     rating_var = tk.DoubleVar(value=0.0)
     box = tk.Frame(controls, bg=BG)
     box.pack(side='left')
-    tk.Label(box, text='MIN RATING', bg=BG, fg=PURPLE,
-             font=(FONT, 10, 'bold')).pack(side='left', padx=(0, 10))
+    tk.Label(box, text='RATED AT LEAST', bg=BG, fg=AMBER,
+             font=(MONO_FONT, 12, 'bold')).pack(side='left', padx=(0, 10))
 
     pills: dict[float, tk.Label] = {}
 
@@ -273,7 +266,7 @@ def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
         rating_var.set(value)
         for option, pill in pills.items():
             active = option == value
-            pill.configure(bg=PURPLE_DARK if active else FIELD, fg=TEXT if active else MUTED)
+            pill.configure(bg=RED if active else FIELD, fg=TEXT if active else MUTED)
 
     for value in (0.0, 3.0, 3.5, 4.0, 4.5):
         text = 'Any' if value == 0.0 else f'★ {value}+'
@@ -287,67 +280,97 @@ def _setup_rating_filter(controls: tk.Frame) -> tk.DoubleVar:
     return rating_var
 
 
-def _draw_match_bar(parent: tk.Widget, score: float, width: int = 150) -> tk.Canvas:
-    """Return a small horizontal bar filled in proportion to score (between 0.0 and 1.0)."""
-    canvas = tk.Canvas(parent, width=width, height=8, bg=CARD, highlightthickness=0)
-    canvas.create_rectangle(0, 0, width, 8, fill=FIELD, outline='')
-    filled = max(4, int(width * min(score, 1.0)))
-    canvas.create_rectangle(0, 0, filled, 8, fill=BLUE, outline='')
+def _match_text(percent: float) -> str:
+    """Return a short label like 'Top 0.4%' for a top_percent value.
+
+    >>> _match_text(0.024)
+    'Top 0.02%'
+    >>> _match_text(2.28)
+    'Top 2.3%'
+    >>> _match_text(0.001)
+    'Top 0.01%'
+    """
+    if percent < 0.01:
+        percent = 0.01
+    if percent < 1:
+        return f'Top {percent:.2f}%'
+    return f'Top {percent:.1f}%'
+
+
+def _draw_match_bar(parent: tk.Widget, strength: float, width: int = 120) -> tk.Canvas:
+    """Return a small bar filled in proportion to strength (between 0.0 and 1.0)."""
+    canvas = tk.Canvas(parent, width=width, height=6, bg=CARD, highlightthickness=0)
+    canvas.create_rectangle(0, 0, width, 6, fill=FIELD, outline='')
+    filled = max(4, int(width * min(strength, 1.0)))
+    canvas.create_rectangle(0, 0, filled, 6, fill=AMBER, outline='')
     return canvas
 
 
-def _build_result_card(parent: tk.Frame, rank: int, movie: Movie, score: float,
-                       searched: Movie) -> None:
-    """Add one recommendation card to parent."""
-    card = tk.Frame(parent, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
-    card.pack(fill='x', pady=4)
+def _build_result_card(parent: tk.Frame, rank: int, movie: Movie, searched: Movie,
+                       percent: float, strength: float) -> None:
+    """Add one result card to parent, styled like a cinema ticket.
 
-    tk.Label(card, text=f'{rank:02d}', bg=CARD, fg=PURPLE_DARK,
-             font=(FONT, 24, 'bold'), width=3).pack(side='left', padx=(10, 4), pady=8)
+    percent is how rare this match is (from top_percent) and strength is how strong
+    it is compared to all other connections in the graph (0.0 to 1.0).
+    """
+    card = tk.Frame(parent, bg=CARD)
+    card.pack(fill='x', pady=3)
+
+    # the red "ticket stub" on the left with the number
+    stub = tk.Frame(card, bg=RED, width=70)
+    stub.pack(side='left', fill='y')
+    stub.pack_propagate(False)
+    tk.Label(stub, text='No.', bg=RED, fg=TEXT, font=(MONO_FONT, 10)).pack(pady=(8, 0))
+    tk.Label(stub, text=f'{rank:02d}', bg=RED, fg=TEXT, font=(MONO_FONT, 22, 'bold')).pack()
+
+    # dashed line between the stub and the ticket, like perforations
+    perforation = tk.Canvas(card, width=10, height=80, bg=CARD, highlightthickness=0)
+    perforation.create_line(5, 0, 5, 80, fill=BORDER, dash=(3, 3), width=2)
+    perforation.pack(side='left', fill='y')
 
     middle = tk.Frame(card, bg=CARD)
-    middle.pack(side='left', fill='x', expand=True, pady=8)
+    middle.pack(side='left', fill='x', expand=True, pady=7, padx=(8, 0))
     name, year = _split_title(movie.title)
     title_row = tk.Frame(middle, bg=CARD)
     title_row.pack(anchor='w')
-    tk.Label(title_row, text=name, bg=CARD, fg=TEXT, font=(FONT, 15, 'bold')).pack(side='left')
+    tk.Label(title_row, text=name, bg=CARD, fg=TEXT, font=(TITLE_FONT, 16, 'bold')).pack(side='left')
     if year:
-        tk.Label(title_row, text=f'  {year}', bg=CARD, fg=MUTED, font=(FONT, 13)).pack(side='left')
+        tk.Label(title_row, text=f'  ({year})', bg=CARD, fg=MUTED, font=(TITLE_FONT, 13)).pack(side='left')
     genres = '  ·  '.join(sorted(movie.genres)) or 'Unknown genre'
     tk.Label(middle, text=genres, bg=CARD, fg=MUTED, font=(FONT, 11)).pack(anchor='w', pady=(2, 0))
-    tk.Label(middle, text=_shared_features(searched, movie), bg=CARD, fg=PURPLE,
-             font=(FONT, 11, 'italic')).pack(anchor='w', pady=(4, 0))
+    tk.Label(middle, text=_shared_features(searched, movie), bg=CARD, fg=AMBER,
+             font=(TITLE_FONT, 12, 'italic')).pack(anchor='w', pady=(4, 0))
 
     right = tk.Frame(card, bg=CARD)
-    right.pack(side='right', padx=16, pady=8)
+    right.pack(side='right', padx=18, pady=7)
+    match_row = tk.Frame(right, bg=CARD)
+    match_row.pack(anchor='e')
+    tk.Label(match_row, text=_match_text(percent), bg=CARD, fg=AMBER,
+             font=(MONO_FONT, 15, 'bold')).pack(side='left')
+    tk.Label(match_row, text=' of all pairs', bg=CARD, fg=MUTED,
+             font=(FONT, 10)).pack(side='left')
+    _draw_match_bar(right, strength).pack(anchor='e', pady=(4, 4))
     rating_row = tk.Frame(right, bg=CARD)
     rating_row.pack(anchor='e')
-    tk.Label(rating_row, text=f'★ {movie.avg_rating:.2f}', bg=CARD, fg=GOLD,
-             font=(FONT, 13, 'bold')).pack(side='left')
-    tk.Label(rating_row, text=f'  ({movie.rating_count:,})', bg=CARD, fg=MUTED,
-             font=(FONT, 11)).pack(side='left')
-    match_row = tk.Frame(right, bg=CARD)
-    match_row.pack(anchor='e', pady=(4, 2))
-    _draw_match_bar(match_row, score).pack(side='left', padx=(0, 8))
-    tk.Label(match_row, text=f'{round(score * 100)}% match', bg=CARD, fg=BLUE,
-             font=(FONT, 11, 'bold')).pack(side='left')
-
+    tk.Label(rating_row, text=f'★ {movie.avg_rating:.1f}', bg=CARD, fg=TEXT,
+             font=(FONT, 12, 'bold')).pack(side='left')
     if movie.imdb_id:
-        link = tk.Label(right, text='View on IMDb ↗', bg=CARD, fg=MUTED,
+        link = tk.Label(rating_row, text='   IMDb ↗', bg=CARD, fg=MUTED,
                         font=(FONT, 11, 'underline'), cursor='hand2')
-        link.pack(anchor='e')
+        link.pack(side='left')
         url = f'https://www.imdb.com/title/tt{movie.imdb_id}/'
         link.bind('<Button-1>', lambda _e: webbrowser.open(url))
         link.bind('<Enter>', lambda _e: link.configure(fg=TEXT))
         link.bind('<Leave>', lambda _e: link.configure(fg=MUTED))
 
     def set_bg(colour: str) -> None:
-        """Recolour the card and every widget inside it (for the hover effect)."""
-        stack: list[tk.Misc] = [card]
-        while stack:
-            widget = stack.pop()
+        """Recolour the ticket (but not the red stub) when the mouse is over it."""
+        widgets = [card, perforation, middle, right, title_row, rating_row, match_row]
+        widgets = widgets + list(middle.winfo_children()) + list(right.winfo_children())
+        widgets = widgets + list(title_row.winfo_children()) + list(rating_row.winfo_children())
+        widgets = widgets + list(match_row.winfo_children())
+        for widget in widgets:
             widget.configure(bg=colour)
-            stack.extend(widget.winfo_children())
 
     def on_leave(_event: tk.Event) -> None:
         """Remove the hover colour only when the pointer has really left the card."""
@@ -373,6 +396,16 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
     graph_path = os.path.join(tempfile.gettempdir(), 'moviematch_graph.html')
 
     _setup_header(window, len(movies), _count_edges(graph, movies))
+
+    # used to turn similarity scores into "Top x%" ranks
+    all_scores = graph.all_scores()
+    total_pairs = len(movies) * (len(movies) - 1) // 2
+
+    def add_card(rank: int, movie: Movie, score: float, compared_to: Movie) -> None:
+        """Add a result card, working out how rare and how strong the match is."""
+        percent = top_percent(score, all_scores, total_pairs)
+        strength = 1 - top_percent(score, all_scores, len(all_scores)) / 100
+        _build_result_card(results, rank, movie, compared_to, percent, strength)
 
     state: dict[str, bool] = {'graph_ready': False}
 
@@ -415,7 +448,7 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
             status.configure(text='This movie has no close matches in the graph yet.', fg=WARN)
 
         for rank, (movie, score) in enumerate(recommendations, start=1):
-            _build_result_card(results, rank, movie, score, searched)
+            add_card(rank, movie, score, searched)
 
         fig = build_graph_figure(searched, recommendations, graph, movies)
         fig.write_html(graph_path)
@@ -442,7 +475,7 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
             for neighbour, neighbour_score in graph.get_neighbours(previous.movie_id):
                 if neighbour.movie_id == movie.movie_id:
                     score = neighbour_score
-            _build_result_card(results, step, movie, score, previous)
+            add_card(step, movie, score, previous)
 
     def open_graph() -> None:
         """Open the network graph for the latest search in the web browser."""
@@ -451,24 +484,24 @@ def run_app(movies: dict[int, Movie], graph: WeightedGraph) -> None:
 
     search_row = tk.Frame(window, bg=BG)
     search_row.pack(fill='x', padx=(32, 20), pady=(16, 0))
-    search_var = _setup_search(search_row, titles, on_search, 'A MOVIE YOU LIKE', start_focused=True)
-    friend_var = _setup_search(search_row, titles, on_search, "A FRIEND'S FAVOURITE (OPTIONAL)")
+    search_var = _setup_search(search_row, titles, on_search, 'I LIKE...', start_focused=True)
+    friend_var = _setup_search(search_row, titles, on_search, "MY FRIEND LIKES... (OPTIONAL)")
 
     controls = tk.Frame(window, bg=BG)
     controls.pack(fill='x', padx=32, pady=(12, 0))
     rating_var = _setup_rating_filter(controls)
-    _make_button(controls, 'Find matches', on_search).pack(side='right', padx=(10, 0))
+    _make_button(controls, 'Find something to watch', on_search).pack(side='right', padx=(10, 0))
     graph_button = _make_button(controls, 'View graph ↗', open_graph, primary=False)
 
     status = tk.Label(window, text='Try "Toy Story", or add a friend\'s favourite to find a movie you both like.',
-                      bg=BG, fg=MUTED, font=(FONT, 14, 'bold'), anchor='w')
+                      bg=BG, fg=MUTED, font=(TITLE_FONT, 16, 'italic'), anchor='w')
     status.pack(fill='x', padx=32, pady=(16, 4))
 
     results = tk.Frame(window, bg=BG)
     results.pack(fill='both', expand=True, padx=32)
 
-    tk.Label(window, text='Data: MovieLens (GroupLens Research)  ·  Built by Capucine, Mavi, Syaikha & Tamima',
-             bg=BG, fg=MUTED, font=(FONT, 10)).pack(side='bottom', pady=8)
+    tk.Label(window, text='made by Capucine, Mavi, Syaikha & Tamima  ·  ratings from MovieLens',
+             bg=BG, fg=MUTED, font=(TITLE_FONT, 11, 'italic')).pack(side='bottom', pady=8)
 
     window.mainloop()
 
