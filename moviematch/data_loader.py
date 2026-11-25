@@ -25,6 +25,7 @@ class Movie:
         - avg_rating: mean of all user ratings for this movie, float (0.0 if there are no ratings for this movie)
         - rating_count: number of ratings that exist for this movie
         - imdb_id: IMDb indentifier string (for instance, "0114709"). May be empty.
+        - tmdb_id: The Movie Database (TMDB) identifier string (for instance, "862"). May be empty.
         - high_raters: set of user IDs who rated this movie >= 4.0
 
     Representation Invariants:
@@ -41,6 +42,7 @@ class Movie:
     avg_rating: float
     rating_count: int
     imdb_id: str
+    tmdb_id: str
     high_raters: set[int]
 
     def __init__(self, movie_id: int, title: str) -> None:
@@ -51,6 +53,7 @@ class Movie:
         self.avg_rating = 0.0
         self.rating_count = 0
         self.imdb_id = ""
+        self.tmdb_id = ""
         self.high_raters = set()
 
 
@@ -234,7 +237,10 @@ def _load_tags(movies: dict[int, Movie]) -> None:
 
 
 def _load_links(movies: dict[int, Movie]) -> None:
-    """Mutate movies, adding the IMDb ID from links.csv.
+    """Mutate movies, adding the IMDb ID and TMDB ID from links.csv.
+
+    The TMDB ID is used by posters.py to download poster images. A few movies
+    have no TMDB ID, in which case tmdb_id stays empty.
 
     The imdbId column stores the numeric portion only (e.g. "0114709").
     The full URL is constructed in interface.py:
@@ -246,6 +252,7 @@ def _load_links(movies: dict[int, Movie]) -> None:
         for row in reader:
             movie_id = int(row[0])
             movies[movie_id].imdb_id = row[1]
+            movies[movie_id].tmdb_id = row[2]
 
 
 # Public Function
@@ -288,5 +295,5 @@ if __name__ == '__main__':
             '_normalize_movie_title', '_load_movies', '_load_ratings', '_load_tags', '_load_links'
         ],
         'max-line-length': 120,
-        'max-attributes': 8,
+        'max-attributes': 9,
     })
