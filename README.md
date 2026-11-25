@@ -36,7 +36,7 @@ Similarity between two movies is a weighted mix of three [Jaccard indices](https
 
 | Signal | Weight | Compares |
 |---|---|---|
-| Audience | **50%** | Users who rated **both** movies 4★ or higher |
+| Audience | **50%** | Users who rated **both** movies 4 stars or higher |
 | Tags | **30%** | Free-text tags such as `pixar`, `mind-bending`, `twist ending` |
 | Genres | **20%** | Genres such as Animation, Thriller, Sci-Fi |
 
