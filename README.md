@@ -26,6 +26,15 @@ Type a movie you like and MovieMatch gives you five others, each with a short re
 
 You can also open an interactive map of the 100 movies closest to the one you searched.
 
+## The look
+
+The design is borrowed from the video rental stores of the 90s and early 2000s. Before streaming, picking a movie meant walking the aisles with a friend, reading the spines of the tapes, and arguing until you found something you both wanted. That's the feeling I wanted the app to have, especially bridge mode, which is basically that argument solved by a graph.
+
+- **Colours.** Cobalt blue walls and marigold signs, the colours a lot of rental stores used so you could spot them from the street.
+- **Results as tapes.** Each recommendation is drawn like a VHS case on a shelf: a white box with a thick outline and a coloured spine down the left side, so a list of results looks like a row of tapes.
+- **Type.** Futura for the title and movie names, because its bold geometric letters look like old shop signs and box art, and Avenir Next for everything else so it stays easy to read.
+- **Plain shapes.** No gradients, shadows or rounded corners, just flat colour and outlines, like printed signs and stickers.
+
 ## How it works
 
 Each movie gets a similarity score with every other movie, made of three parts:
